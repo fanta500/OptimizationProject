@@ -148,28 +148,25 @@ class Dictionary:
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
-        a = -self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
-        # print("k is:", k, "l is:", l)
-        # print("a is:", a)
-        # print("N[k] is:", self.N[k])
-        # print("B[l] is:", self.B[l])
-        
+        a = self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
+        if a < 0:
+            a = -a
         xEntering = self.N[k]
         xLeaving = self.B[l]
         # Solve xLeaving equation for xEntering
         row = self.C[l+1] #row of leaving var
         row = row/a #div all coefs by a
-        row[k+1] = -1/a #set the leaving var to 1/a
+        row[k+1] = -1/a #set the leaving var to -1/a
         self.C[l+1] = row
         # Update C
         for i in range(len(self.C)):
             if i == l+1: #skip the row we already modified
                 continue
             else:
-                enteringCoef = self.C[i, k+1]
-                #print("enteringCoef is:", enteringCoef)
-                self.C[i] = self.C[i] + enteringCoef*row
-                self.C[i, k+1] = -self.C[i, k+1]
+                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
+                self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
+                self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
+                
         # Update N
         self.N[k] = xLeaving
         # Update B
@@ -201,7 +198,7 @@ def bland(D,eps):
     for i in range(1, len(obj)):
         coef = obj[i]
         index = D.N[i-1]
-        print("index for k", index)
+    
         if (coef > 0 and bestIndex == None):
             k = i-1
             bestIndex = index
@@ -212,17 +209,13 @@ def bland(D,eps):
     bestIndex = None
     for i in range(0, len(D.B)):
         index = D.B[i]
-        print("index for l", index)
+        
         if bestIndex == None:
             l = i
             bestIndex = index
         if index < l:
             l = i
             bestIndex = index
-
-    print(k, l)
-    print(D.N[k])
-    print(D.B[l])
     return k,l
     
 def largest_coefficient(D,eps):
@@ -287,11 +280,18 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         k, l = pivotrule(D)
         if k is None:
             return LPResult.OPTIMAL, D
-        else:
+        unbounded = True
+        for i in range(1, len(D.B)):
+            if D.C[k, i] < 0:
+                unbounded = False
+                continue
+        if k is not None and not unbounded: 
             D.pivot(k,l)
+        if unbounded:
+            return LPResult.UNBOUNDED, None
         
-        print("k is:", k, "l is:", l)
-        break
+        #print("k is:", k, "l is:", l)
+    
     return None,None
   
 def run_examples():
