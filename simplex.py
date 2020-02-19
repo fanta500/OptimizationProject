@@ -149,10 +149,10 @@ class Dictionary:
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
         a = -self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
-        print("k is:", k, "l is:", l)
-        print("a is:", a)
-        print("N[k] is:", self.N[k])
-        print("B[l] is:", self.B[l])
+        # print("k is:", k, "l is:", l)
+        # print("a is:", a)
+        # print("N[k] is:", self.N[k])
+        # print("B[l] is:", self.B[l])
         
         xEntering = self.N[k]
         xLeaving = self.B[l]
@@ -194,8 +194,35 @@ def bland(D,eps):
     # l is None if D is Unbounded
     # Otherwise D.B[l] is a leaving variable
        
-    k=l=None
-    # TODO
+    k = l = None
+
+    obj = D.C[0]
+    bestIndex = None
+    for i in range(1, len(obj)):
+        coef = obj[i]
+        index = D.N[i-1]
+        print("index for k", index)
+        if (coef > 0 and bestIndex == None):
+            k = i-1
+            bestIndex = index
+        if (coef > 0 and index < bestIndex):
+            k = i-1
+            bestIndex = index
+
+    bestIndex = None
+    for i in range(0, len(D.B)):
+        index = D.B[i]
+        print("index for l", index)
+        if bestIndex == None:
+            l = i
+            bestIndex = index
+        if index < l:
+            l = i
+            bestIndex = index
+
+    print(k, l)
+    print(D.N[k])
+    print(D.B[l])
     return k,l
     
 def largest_coefficient(D,eps):
@@ -255,7 +282,16 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # If LP has an optimal solution the return value is
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
-    #TODO
+    D = Dictionary(c, A, b)
+    while True:
+        k, l = pivotrule(D)
+        if k is None:
+            return LPResult.OPTIMAL, D
+        else:
+            D.pivot(k,l)
+        
+        print("k is:", k, "l is:", l)
+        break
     return None,None
   
 def run_examples():
