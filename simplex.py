@@ -142,13 +142,38 @@ class Dictionary:
             return self.C[0,0]
 
     def pivot(self,k,l):
+        '''
+            DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
+        '''
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
-
         # save pivot coefficient
-        a = self.C[l+1,k+1]
-        # TODO
-        pass
+        a = -self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
+        print("k is:", k, "l is:", l)
+        print("a is:", a)
+        print("N[k] is:", self.N[k])
+        print("B[l] is:", self.B[l])
+        
+        xEntering = self.N[k]
+        xLeaving = self.B[l]
+        # Solve xLeaving equation for xEntering
+        row = self.C[l+1] #row of leaving var
+        row = row/a #div all coefs by a
+        row[k+1] = -1/a #set the leaving var to 1/a
+        self.C[l+1] = row
+        # Update C
+        for i in range(len(self.C)):
+            if i == l+1: #skip the row we already modified
+                continue
+            else:
+                enteringCoef = self.C[i, k+1]
+                #print("enteringCoef is:", enteringCoef)
+                self.C[i] = self.C[i] + enteringCoef*row
+                self.C[i, k+1] = -self.C[i, k+1]
+        # Update N
+        self.N[k] = xLeaving
+        # Update B
+        self.B[l] = xEntering
 
 
 class LPResult(Enum):
@@ -343,3 +368,5 @@ def run_examples():
     D.pivot(1,1)
     print(D)
 
+if __name__ == "__main__":
+    run_examples()
