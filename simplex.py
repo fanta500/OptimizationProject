@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from fractions import Fraction
 from enum import Enum
 
@@ -205,17 +206,35 @@ def bland(D,eps):
         if (coef > 0 and index < bestIndex):
             k = i-1
             bestIndex = index
+    if k is None:
+        return None, None
 
     bestIndex = None
-    for i in range(0, len(D.B)):
-        index = D.B[i]
+    bestFrac = None
+    for i in range(1, len(D.C)):
+        index = D.B[i-1]
+        a = D.C[i, k+1]
+        b = D.C[i, 0]
+        if a < 0:
+            a = -a
+        
+        try:
+            frac = b/a
+        except:
+            continue
         
         if bestIndex == None:
-            l = i
+            l = i-1
+            bestFrac = frac
             bestIndex = index
-        if index < l:
-            l = i
+        if (frac < bestFrac):
+            l = i-1
+            bestFrac = frac
             bestIndex = index
+        if (frac == bestFrac and index < bestIndex):
+            l = i-1
+            bestIndex = index
+
     return k,l
     
 def largest_coefficient(D,eps):
@@ -282,7 +301,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             return LPResult.OPTIMAL, D
         unbounded = True
         for i in range(1, len(D.B)):
-            if D.C[k, i] < 0:
+            if D.C[i, k+1] < 0:
                 unbounded = False
                 continue
         if k is not None and not unbounded: 
