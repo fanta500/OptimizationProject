@@ -179,35 +179,37 @@ class Dictionary:
             return self.C[0,0]
 
     def pivot(self,k,l):
+        
+        
         '''
             DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
         '''
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
-        a = self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
-        if a < 0:
-            a = -a
-        xEntering = self.N[k]
-        xLeaving = self.B[l]
+        ##a = self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
+        ##if a < 0:
+        ##    a = -a
+        ##xEntering = self.N[k]
+        ##xLeaving = self.B[l]
         # Solve xLeaving equation for xEntering
-        row = self.C[l+1] #row of leaving var
-        row = row/a #div all coefs by a
-        row[k+1] = -1/a #set the leaving var to -1/a
-        self.C[l+1] = row
+        ##row = self.C[l+1] #row of leaving var
+        ##row = row/a #div all coefs by a
+        ##row[k+1] = -1/a #set the leaving var to -1/a
+        ##self.C[l+1] = row
         # Update C
-        for i in range(len(self.C)):
-            if i == l+1: #skip the row we already modified
-                continue
-            else:
-                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
-                self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
-                self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
+        ##for i in range(len(self.C)):
+        ##    if i == l+1: #skip the row we already modified
+        ##        continue
+        ##    else:
+        ##        enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
+        ##        self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
+        ##        self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
                 
         # Update N
-        self.N[k] = xLeaving
+        ##self.N[k] = xLeaving
         # Update B
-        self.B[l] = xEntering
+        ##self.B[l] = xEntering
 
 
 class LPResult(Enum):
