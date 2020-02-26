@@ -258,7 +258,7 @@ def bland(D,eps):
             print("smallest ratio found with elements")
             print("b =", BAarr[i, 0])
             print("a =", BAarr[i, 1])
-            indexInC = i-1+deletedRows
+            indexInC = i+deletedRows
         print("the index in C is")
         print(indexInC)
     l = indexInC
