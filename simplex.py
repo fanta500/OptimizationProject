@@ -202,14 +202,24 @@ class Dictionary:
         for i in range(h):
             for j in range(w):
                 if i == l+1 and j == k+1:
-                    newDict[i, j] = Fraction(1/self.C[i, j])
-                elif j == k+1:
-                    newDict[i, j] = Fraction(self.C[i, j] / a)
-                elif i == l+1:
-                    newDict[i, j] = Fraction(-self.C[i, j]/a)
-                else:
-                    newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a))
+                    if self.dtype == Fraction:
+                        newDict[i, j] = Fraction(1 / self.C[i, j]).limit_denominator()
+                    # if self.dtype == int:
 
+                elif j == k+1:
+                    if self.dtype == Fraction:
+                        newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
+                    # if self.dtype == int:
+
+                elif i == l+1:
+                    if self.dtype == Fraction:
+                        newDict[i, j] = Fraction(-self.C[i, j] / a).limit_denominator()
+                    # if self.dtype == int:
+
+                else:
+                    if self.dtype == Fraction:
+                        newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
+                    # if self.dtype == int:
         self.C = newDict
 
         temp = self.B[l]
