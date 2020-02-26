@@ -191,7 +191,7 @@ class Dictionary:
         xLeaving = self.B[l]
         print("Entering var is", xEntering)
         print("Leaving var is", xLeaving)
-        print("The dictionary is", self.C)
+        #print("The dictionary is", self.C)
         # Solve xLeaving equation for xEntering
         row = self.C[l+1] #row of leaving var
         row = row/a #div all coefs by a
