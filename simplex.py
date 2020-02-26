@@ -192,7 +192,9 @@ class Dictionary:
           |      . . . . . . .
           |    h
         """
-
+        print("The coeffecients are", self.C)
+        print("Entering is", self.N[k])
+        print("Leaving is", self.B[l])
         a = self.C[l+1, k+1]
         h, w = self.C.shape
 
@@ -201,13 +203,13 @@ class Dictionary:
         for i in range(h):
             for j in range(w):
                 if i == l+1 and j == k+1:
-                    newDict[i, j] = Fraction(1/self.C[i, j])
+                    newDict[i, j] = Fraction(1/self.C[i, j]).limit_denominator()
                 elif j == k+1:
-                    newDict[i, j] = Fraction(self.C[i, j] / a)
+                    newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
                 elif i == l+1:
-                    newDict[i, j] = Fraction(-self.C[i, j]/a)
+                    newDict[i, j] = Fraction(-self.C[i, j] / a).limit_denominator()
                 else:
-                    newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a))
+                    newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
 
         self.C = newDict
 
