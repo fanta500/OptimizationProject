@@ -173,14 +173,52 @@ class Dictionary:
     def value(self):
         # Extracts the value of the basic solution defined by a dictionary D
         if self.dtype==int:
-            return Fraction(self.C[0,0],self.lastpivot)
+            return Fraction(self.C[0, 0], self.lastpivot)
         else:
-            return self.C[0,0]
+            return self.C[0, 0]
 
-    def pivot(self,k,l):
+    def pivot(self, k, l):
+        # B[l],N[k]
+        """
+                      j
+               _________________
+          |           k+1
+          |     0     \/      w
+          |      |_|_|_|_|_|..
+          |      |_|_|_|_|_|..
+        i |      |_|_|_|_|_|..
+          | l+1> |_|_|a|_|_|..
+          |      . . . . . ..
+          |      . . . . . . .
+          |    h
+        """
+
+        a = self.C[l+1, k+1]
+        h, w = self.C.shape
+
+        newDict = np.zeros((h, w), dtype = self.dtype)
+
+        for i in range(h):
+            for j in range(w):
+                if i == l+1 and j == k+1:
+                    newDict[i, j] = Fraction(1/self.C[i, j])
+                elif j == k+1:
+                    newDict[i, j] = Fraction(self.C[i, j] / a)
+                elif i == l+1:
+                    newDict[i, j] = Fraction(-self.C[i, j]/a)
+                else:
+                    newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a))
+
+        self.C = newDict
+
+        temp = self.B[l]
+        self.B[l] = self.N[k]
+        self.N[k] = temp
+
+
         '''
             DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
-        '''
+            
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
@@ -210,7 +248,7 @@ class Dictionary:
         self.N[k] = xLeaving
         # Update B
         self.B[l] = xEntering
-
+        '''
 
 class LPResult(Enum):
     OPTIMAL = 1
