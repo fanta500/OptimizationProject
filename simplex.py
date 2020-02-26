@@ -255,6 +255,9 @@ def bland(D,eps):
 
     for i in range(len(BAarr)):
         if smallestRatio == np.divide(BAarr[i, 0], BAarr[i, 1]):
+            print("smallest ratio found with elements")
+            print("b =", BAarr[i, 0])
+            print("a =", BAarr[i, 1])
             indexInC = i-1+deletedRows
         print("the index in C is")
         print(indexInC)
