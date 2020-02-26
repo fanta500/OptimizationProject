@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from decimal import Decimal
 from fractions import Fraction
 from enum import Enum
 
@@ -189,9 +190,9 @@ class Dictionary:
             a = -a
         xEntering = self.N[k]
         xLeaving = self.B[l]
-        print("Entering var is", xEntering)
-        print("Leaving var is", xLeaving)
-        #print("The dictionary is", self.C)
+        #print("Entering var is", xEntering)
+        #print("Leaving var is", xLeaving)
+        #print("The dictionary is", self)
         # Solve xLeaving equation for xEntering
         row = self.C[l+1] #row of leaving var
         row = row/a #div all coefs by a
@@ -203,6 +204,7 @@ class Dictionary:
                 continue
             else:
                 enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
+                enteringCoef = float(Fraction(enteringCoef).limit_denominator())
                 self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
                 
@@ -339,6 +341,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
+    print("The dictionary is:")
+    print(D)
     while True:
         k, l = pivotrule(D)
         if k is None:
@@ -348,6 +352,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             return LPResult.UNBOUNDED, None 
 
         D.pivot(k,l)
+        print("The dictionary is:")
+        print(D)
         # unbounded = True
         # for i in range(1, len(D.B)):
         #     if D.C[i, k+1] < 0:
@@ -359,7 +365,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         #     return LPResult.UNBOUNDED, None
         
         #print("k is:", k, "l is:", l)
-    
+
     return None,None
   
 def run_examples():
