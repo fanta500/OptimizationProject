@@ -9,7 +9,7 @@ def integer_pivoting_example(): return np.array([5,2]),np.array([[3,1],[2,5]]),n
 def exercise2_5(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([-3,-1,4])
 def exercise2_6(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([-3,-1,2])
 def exercise2_7(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[-1,2]]),np.array([-3,-1,2])
-def random_lp(n,m,sigma=10): return np.round(sigma*np.random.randn(n)),np.round(sigma*np.random.randn(m,n)),np.round(sigma*np.abs(np.random.randn(m)))
+def random_lp(n,m,sigma=10): return np.round(sigma*np.random.randn(n)), np.round(sigma*np.random.randn(m,n)), np.round(sigma*np.abs(np.random.randn(m)))
 
 class Dictionary:
     # Simplex dictionary as defined by Vanderbei
