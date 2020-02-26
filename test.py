@@ -35,6 +35,9 @@ class TestRandomLP(unittest.TestCase):
             self.c = c
             self.A = A
             self.b = b
+            print(c)
+            print(A)
+            print(b)
             ################
             startTimeLinprog = time.time()
             linprogRes = opt.linprog(c, A, b)

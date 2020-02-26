@@ -189,6 +189,9 @@ class Dictionary:
             a = -a
         xEntering = self.N[k]
         xLeaving = self.B[l]
+        print("Entering var is", xEntering)
+        print("Leaving var is", xLeaving)
+        print("The dictionary is", self.C)
         # Solve xLeaving equation for xEntering
         row = self.C[l+1] #row of leaving var
         row = row/a #div all coefs by a
@@ -271,7 +274,13 @@ def bland(D,eps):
             bestIndex = index
 
     return k,l
-    
+
+def checkUnbounded(D, k):
+    for i in range(len(D.B)):
+        if D.C[i+1, k+1] < 0:
+            return False
+    return True
+
 def largest_coefficient(D,eps):
     # Assumes a feasible dictionary D and find entering and leaving
     # variables according to the Largest Coefficient rule.
@@ -334,15 +343,20 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         k, l = pivotrule(D)
         if k is None:
             return LPResult.OPTIMAL, D
-        unbounded = True
-        for i in range(1, len(D.B)):
-            if D.C[i, k+1] < 0:
-                unbounded = False
-                continue
-        if k is not None and not unbounded: 
-            D.pivot(k,l)
-        if unbounded:
-            return LPResult.UNBOUNDED, None
+
+        if checkUnbounded(D, k):
+            return LPResult.UNBOUNDED, None 
+
+        D.pivot(k,l)
+        # unbounded = True
+        # for i in range(1, len(D.B)):
+        #     if D.C[i, k+1] < 0:
+        #         unbounded = False
+        #         continue
+        # if k is not None and not unbounded: 
+        #     D.pivot(k,l)
+        # if unbounded:
+        #     return LPResult.UNBOUNDED, None
         
         #print("k is:", k, "l is:", l)
     
