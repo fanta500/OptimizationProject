@@ -3,6 +3,118 @@ import numpy as np
 from fractions import Fraction
 from simplex import lp_solve, Dictionary, bland, LPResult
 
+class TestBland(unittest.TestCase):
+    """
+            Entering:   Choose the first nonbasic variable with non-negative coefficient.
+
+            Leaving:  Choose the basic variable with lowest index i from the set {\forall i : max(a/b)}
+    """
+    # B[l],N[k]
+    def test_bland_first_index_positive(self):
+        """
+                     0,  3,  6,  2
+                    14,  2, -6,  2
+                     8, -4, -7, -4
+                     5, -4, -5, -8
+
+                should choose: [0,0] - entering index = 0 from {3,6,2}, leaving index = 0 from {2/14} subset of max({2/14 (0.14285), -4/8 (-0,5), -4/5 (-0.8)})
+
+                     6, -3/4,   3/4, -1
+                    18, -1/2, -19/2,  0
+                     2, -1/4,  -7/4, -1
+                    -3,   1,     2,  -4
+        """
+
+        d = Dictionary(np.array([3, 6, 2]), np.array([[-2, 6, -2], [4, 7, 4], [4, 5, 8]]), np.array([14, 8, 5]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, 0)
+
+    def test_bland_some_index_positive(self):
+        """
+                0,  -8, -7,  2
+                14,  2, -6,  2
+                8,  -4, -7, -4
+                5,  -4, -5, -8
+
+                should choose: [2, 0] - entering index = 2 from {2}, leaving index = 0 from {2/14} subset of max({2/14 (0.14285), -4/8 (-0,5), -8/5 (-1.6)})
+        """
+
+        d = Dictionary(np.array([-8, -7, 2]), np.array([[-2, 6, -2], [4, 7, 4], [4, 5, 8]]), np.array([14, 8, 5]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, 2)
+
+    def test_bland_some_fraction_greatest_positive(self):
+        """
+                 0,  2,  3,  5
+                 8, -3,  2,  0
+                10,  0, -2, -3
+                 6, -1, -1, -1
+
+                should choose: [0, 1] - entering index = 0 from {2,3,5}, leaving index = 1 from {0/10} subset of max({-3/8 (-0.375), 0/10 (0), -1/6 (0.166..)})
+        """
+
+        d = Dictionary(np.array([2, 3, 5]), np.array([[3, -2, 0], [0, 2, -3], [1, 1, 1]]), np.array([8, 10, 6]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, 0)
+        self.assertEqual(b, 1)
+
+    def test_bland_greatest_fraction_zero_div_zero(self):
+        """
+                0,  2,  3,  5
+                8, -3,  2,  0
+                0,  0, -2, -3
+                6, -1, -1, -1
+
+                should choose: [0, 1] - entering index = 0 from {2,3,5}, leaving index = 1 from {0/0} subset of max({-3/8 (-0.375), 0/0 (0), -1/6 (-0.166..)})
+        """
+
+        d = Dictionary(np.array([2, 3, 5]), np.array([[3, -2, 0], [0, 2, -3], [1, 1, 1]]), np.array([8, 0, 6]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, 0)
+        self.assertEqual(b, 1)
+
+    def test_bland_multiple_greatest_fractions(self):
+        """
+                0, 1,  7, -1
+                4, 2, -3, -3
+                8, 4, -3,  2
+                8, 1, -6, -3
+
+                should choose: [0, 0] - entering index = 0 from {1,7}, leaving index = 1 from {2/4, 4/8} subset of max({2/4 (0.5), 4/8 (0.5), 1/8 (0.125)})
+        """
+
+        d = Dictionary(np.array([1, 7, -1]), np.array([[-2, 3, 3], [-4, 3, -2], [-1, 6, 3]]), np.array([4, 8, 8]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, 0)
+        self.assertEqual(b, 0)
+
+    def test_bland_detect_optimal(self):
+        """
+                112, -35/3, -28, -8/3
+                45,  -13/3, -17, -1/3
+                5,   -1/3,   0,  -1/3
+                8,    -1,   -4,    0
+
+                should choose: [None, ?] - entering index = 0 from {}, leaving index = ? from {} subset of max({})
+        """
+
+        d = Dictionary(np.array([-35/3, -28, -8/3]), np.array([[13/3, 17, 1/3], [1/3, 0, 1/3], [1, 4, 0]]), np.array([45, 5, 8]))
+        n, b = bland(d, 0)
+        self.assertEqual(n, None)
+
+    def test_bland_detect_unbounded(self):
+        """
+                 0, 4,   5
+                14, 4, -12
+                 7, 9,  -7
+
+                 should choose: [0, None] - entering index = 0 from {4, 5}, leaving index = None
+        """
+
+        d = Dictionary(np.array([4, 5]), np.array([[-4, 12], [-9, 7]]), np.array([14, 7]))
+        n, b = bland(d, 0)
+        self.assertEqual(b, None)
+
 
 class TestPivot(unittest.TestCase):
     def test_pivot_positive_a(self):
