@@ -3,12 +3,13 @@ import numpy as np
 from fractions import Fraction
 from simplex import lp_solve, Dictionary, bland, LPResult
 
-class TestBland(unittest.TestCase):
-    """
-            Entering:   Choose the first nonbasic variable with non-negative coefficient.
+"""
+    Entering:   Choose the first nonbasic variable with non-negative coefficient.
+    Leaving:  Choose the basic variable with lowest index i from the set {\forall i : max(a/b)}
+"""
 
-            Leaving:  Choose the basic variable with lowest index i from the set {\forall i : max(a/b)}
-    """
+
+class TestBland(unittest.TestCase):
     # B[l],N[k]
     def test_bland_first_index_positive(self):
         """
@@ -27,7 +28,7 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([3, 6, 2]), np.array([[-2, 6, -2], [4, 7, 4], [4, 5, 8]]), np.array([14, 8, 5]))
         n, b = bland(d, 0)
-        self.assertEqual(n, 0)
+        self.assertEqual(0, n)
 
     def test_bland_some_index_positive(self):
         """
@@ -41,7 +42,7 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([-8, -7, 2]), np.array([[-2, 6, -2], [4, 7, 4], [4, 5, 8]]), np.array([14, 8, 5]))
         n, b = bland(d, 0)
-        self.assertEqual(n, 2)
+        self.assertEqual(2, n)
 
     def test_bland_some_fraction_greatest_positive(self):
         """
@@ -55,8 +56,8 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([2, 3, 5]), np.array([[3, -2, 0], [0, 2, -3], [1, 1, 1]]), np.array([8, 10, 6]))
         n, b = bland(d, 0)
-        self.assertEqual(n, 0)
-        self.assertEqual(b, 1)
+        self.assertEqual(0, n)
+        self.assertEqual(1, b)
 
     def test_bland_greatest_fraction_zero_div_zero(self):
         """
@@ -70,8 +71,8 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([2, 3, 5]), np.array([[3, -2, 0], [0, 2, -3], [1, 1, 1]]), np.array([8, 0, 6]))
         n, b = bland(d, 0)
-        self.assertEqual(n, 0)
-        self.assertEqual(b, 1)
+        self.assertEqual(0, n)
+        self.assertEqual(1, b)
 
     def test_bland_multiple_greatest_fractions(self):
         """
@@ -85,8 +86,8 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([1, 7, -1]), np.array([[-2, 3, 3], [-4, 3, -2], [-1, 6, 3]]), np.array([4, 8, 8]))
         n, b = bland(d, 0)
-        self.assertEqual(n, 0)
-        self.assertEqual(b, 0)
+        self.assertEqual(0, n)
+        self.assertEqual(0, b)
 
     def test_bland_detect_optimal(self):
         """
@@ -100,7 +101,7 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([-35/3, -28, -8/3]), np.array([[13/3, 17, 1/3], [1/3, 0, 1/3], [1, 4, 0]]), np.array([45, 5, 8]))
         n, b = bland(d, 0)
-        self.assertEqual(n, None)
+        self.assertEqual(None, n)
 
     def test_bland_detect_unbounded(self):
         """
@@ -113,7 +114,7 @@ class TestBland(unittest.TestCase):
 
         d = Dictionary(np.array([4, 5]), np.array([[-4, 12], [-9, 7]]), np.array([14, 7]))
         n, b = bland(d, 0)
-        self.assertEqual(b, None)
+        self.assertEqual(None, b)
 
 
 class TestPivot(unittest.TestCase):

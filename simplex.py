@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from fractions import Fraction
+from operator import itemgetter
 from enum import Enum
 
 # c = 5,  4, 3
@@ -34,7 +35,7 @@ def exercise2_5(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.ar
 # A = -1, -1
 #     -1,  1
 #      1,  2
-# b = -3, -1, 2
+# b = -3, -1, 2 greatest_candidates = max(leaving_candidates)
 def exercise2_6(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([-3,-1,2])
 
 # c =  1,  3
@@ -45,7 +46,6 @@ def exercise2_6(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.ar
 def exercise2_7(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[-1,2]]),np.array([-3,-1,2])
 
 def random_lp(n,m,sigma=10): return np.round(sigma*np.random.randn(n)),np.round(sigma*np.random.randn(m,n)),np.round(sigma*np.abs(np.random.randn(m)))
-
 
 class Dictionary:
     # Simplex dictionary as defined by Vanderbei
@@ -227,37 +227,6 @@ class Dictionary:
         self.N[k] = temp
 
 
-        '''
-            DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
-            
-        # Pivot Dictionary with N[k] entering and B[l] leaving
-        # Performs integer pivoting if self.dtype==int
-        # save pivot coefficient
-        a = self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
-        if a < 0:
-            a = -a
-        xEntering = self.N[k]
-        xLeaving = self.B[l]
-        # Solve xLeaving equation for xEntering
-        row = self.C[l+1] #row of leaving var
-        row = row/a #div all coefs by a
-        row[k+1] = -1/a #set the leaving var to -1/a
-        self.C[l+1] = row
-        # Update C
-        for i in range(len(self.C)):
-            if i == l+1: #skip the row we already modified
-                continue
-            else:
-                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
-                self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
-                self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
-                
-        # Update N
-        self.N[k] = xLeaving
-        # Update B
-        self.B[l] = xEntering
-        '''
-
 class LPResult(Enum):
     OPTIMAL = 1
     INFEASIBLE = 2
@@ -275,52 +244,59 @@ def bland(D,eps):
     # Otherwise D.N[k] is entering variable
     # l is None if D is Unbounded
     # Otherwise D.B[l] is a leaving variable
-       
-    k = l = None
 
-    obj = D.C[0]
-    bestIndex = None
-    for i in range(1, len(obj)):
-        coef = obj[i]
-        index = D.N[i-1]
-    
-        if (coef > 0 and bestIndex == None):
-            k = i-1
-            bestIndex = index
-        if (coef > 0 and index < bestIndex):
-            k = i-1
-            bestIndex = index
-    if k is None:
-        return None, None
+    """
+                  _________________
+             |           k+1
+             |     0     \/      w
+             |      |_|_|_|_|_|..
+             |      |_|_|_|_|_|..
+             |      |_|_|_|_|_|..
+             | l+1> |_|_|a|_|_|..
+             |      . . . . . ..
+             |      . . . . . . .
+             |    h
+    """
 
-    bestIndex = None
-    bestFrac = None
-    for i in range(1, len(D.C)):
-        index = D.B[i-1]
-        a = D.C[i, k+1]
-        b = D.C[i, 0]
-        if a < 0:
-            a = -a
-        
-        try:
-            frac = b/a
-        except:
-            continue
-        
-        if bestIndex == None:
-            l = i-1
-            bestFrac = frac
-            bestIndex = index
-        if (frac < bestFrac):
-            l = i-1
-            bestFrac = frac
-            bestIndex = index
-        if (frac == bestFrac and index < bestIndex):
-            l = i-1
-            bestIndex = index
+    h, w = D.C.shape
 
-    return k,l
-    
+    entering_candidates = []
+    leaving_candidates = []
+
+    # List of every positive number and index position in D.N
+
+
+    for i in range(1, w):                           # Loop through the objective function
+        if D.C[0, i] > 0:                           # note c if it is strictly positive
+            candidate = [D.N[i - 1], i - 1]         # append the variables number and it's index position
+            entering_candidates.append(candidate)
+
+    # Bail out fast
+    if len(entering_candidates) == 0:
+        return None, 0
+
+    # sort the candidates and take the first one
+    sorted(entering_candidates, key=itemgetter(0))
+    n = entering_candidates[0][1]
+
+    for i in range(1, h):                           # Find every leaving candidate
+        fraction = 0
+        if not D.C[i, n + 1] == 0 and D.C[i, 0] == 0:
+            fraction = Fraction(D.C[i, n + 1], D.C[i, 0])
+        candidate = [fraction, i - 1]               # append the fraction a/b and the corresponding variables index position
+        leaving_candidates.append(candidate)
+
+    # Prune the candidates by taking the max of the set
+    sorted(sorted(leaving_candidates, key=itemgetter(1)), key=itemgetter(0))
+
+    # Sort the greatest candidates and pick the first one
+    b = leaving_candidates[0][1]
+
+    print("entering candidates ", entering_candidates, " chosen candidate ", n)
+    print("leaving candidates ", leaving_candidates, " chosen candidate ", b)
+    # index position of the best entering variable,
+    return n, 0 # N[k], B[l]
+
 def largest_coefficient(D,eps):
     # Assumes a feasible dictionary D and find entering and leaving
     # variables according to the Largest Coefficient rule.
