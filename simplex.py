@@ -234,46 +234,31 @@ def bland(D,eps):
        
     k = l = None
 
-    obj = D.C[0]
-    bestIndex = None
-    for i in range(1, len(obj)):
-        coef = obj[i]
-        index = D.N[i-1]
-    
-        if (coef > 0 and bestIndex == None):
-            k = i-1
-            bestIndex = index
-        if (coef > 0 and index < bestIndex):
-            k = i-1
-            bestIndex = index
-    if k is None:
+    obj = D.C[0, 1:] #this selects the first row and all columns except the first one
+    largestCoef = np.sort(obj)[len(obj)-1]
+    if largestCoef < 0:
         return None, None
+    indexInC = np.where(obj == largestCoef)[0][0]
+    k = indexInC
 
-    bestIndex = None
-    bestFrac = None
-    for i in range(1, len(D.C)):
-        index = D.B[i-1]
-        a = D.C[i, k+1]
-        b = D.C[i, 0]
-        if a < 0:
-            a = -a
-        
-        try:
-            frac = b/a
-        except:
-            continue
-        
-        if bestIndex == None:
-            l = i-1
-            bestFrac = frac
-            bestIndex = index
-        if (frac < bestFrac):
-            l = i-1
-            bestFrac = frac
-            bestIndex = index
-        if (frac == bestFrac and index < bestIndex):
-            l = i-1
-            bestIndex = index
+    enteringVarColumn = D.C[1:, k+1]
+    BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn))
+    BAarrTemp = np.copy(BAarr)
+    deletedRows = 0
+    for i in range(len(BAarr)):
+        if BAarr[i, 1] == Fraction(0.0):
+            BAarrTemp = np.delete(BAarrTemp, i, 0)
+            deletedRows += 1
+
+    BAarr = np.copy(BAarrTemp)
+    smallestRatio = np.sort(np.divide(BAarr[1:, 0], BAarr[1:, 1]))[0]
+
+    for i in range(len(BAarr)):
+        if smallestRatio == np.divide(BAarr[i, 0], BAarr[i, 1]):
+            indexInC = i-1+deletedRows
+        print("the index in C is")
+        print(indexInC)
+    l = indexInC
 
     return k,l
 
