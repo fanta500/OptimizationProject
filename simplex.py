@@ -281,13 +281,14 @@ def bland(D,eps):
 
     for i in range(1, h):                           # Find every leaving candidate
         fraction = 0
-        if not D.C[i, n + 1] == 0 and D.C[i, 0] == 0:
+        if not D.C[i, n + 1] == 0 and not D.C[i, 0] == 0:
             fraction = Fraction(D.C[i, n + 1], D.C[i, 0])
         candidate = [fraction, i - 1]               # append the fraction a/b and the corresponding variables index position
         leaving_candidates.append(candidate)
 
     # Prune the candidates by taking the max of the set
-    sorted(sorted(leaving_candidates, key=itemgetter(1)), key=itemgetter(0))
+    #TODO THE ERROR IS RIGHT HERE <--------------------------------------------------------------------------
+    sorted(sorted(leaving_candidates, key=itemgetter(1)), reverse=True, key=itemgetter(0))
 
     # Sort the greatest candidates and pick the first one
     b = leaving_candidates[0][1]
