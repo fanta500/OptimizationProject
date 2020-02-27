@@ -16,21 +16,21 @@ def compareRes(ourRes, linprogRes):
         return True
 
 class TestRandomLP(unittest.TestCase):
-    def setUp(self):
-        c, A, b = random_lp(random.randrange(20), random.randrange(20))
-        self.c = c
-        self.A = A
-        self.b = b
-        # print(c)
-        # print(A)
-        # print(b)
+    # def setUp(self):
+    #     c, A, b = random_lp(random.randrange(20), random.randrange(20))
+    #     self.c = c
+    #     self.A = A
+    #     self.b = b
+    #     # print(c)
+    #     # print(A)
+    #     # print(b)
 
     def test_solve(self):
         totalTimeOur = 0
         totalTimeLinprog = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
+            c, A, b = random_lp(random.randrange(1,10), random.randrange(1,10))
             self.c = c
             self.A = A
             self.b = b
