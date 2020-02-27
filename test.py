@@ -3,12 +3,17 @@ import numpy as np
 from fractions import Fraction
 from simplex import lp_solve, Dictionary, bland, LPResult
 
+
+class TestQuestionablePython(unittest.TestCase):
+    def test_fractions(self):
+        self.assertGreater(Fraction(0), Fraction(-3/8))
+
+
 """
     Entering:   Choose the first nonbasic variable with non-negative coefficient.
     Leaving:  Choose the basic variable with lowest index i from the set {\forall i : max(a/b)}
 """
-
-
+#TODO ændre matricerne til 5x5 i stedet for 3x3
 class TestBland(unittest.TestCase):
     # B[l],N[k]
     def test_bland_first_index_positive(self):
@@ -112,7 +117,7 @@ class TestBland(unittest.TestCase):
                  should choose: [0, None] - entering index = 0 from {4, 5}, leaving index = None
         """
 
-        d = Dictionary(np.array([4, 5]), np.array([[-4, 12], [-9, 7]]), np.array([14, 7]))
+        d = Dictionary(np.array([4, 5]), np.array([[4, -12], [9, -7]]), np.array([14, 7]))
         n, b = bland(d, 0)
         self.assertEqual(None, b)
 

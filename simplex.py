@@ -267,7 +267,7 @@ def bland(D,eps):
 
 
     for i in range(1, w):                           # Loop through the objective function
-        if D.C[0, i] > 0:                           # note c if it is strictly positive
+        if D.C[0, i] > eps:                         # note c if it is strictly positive
             candidate = [D.N[i - 1], i - 1]         # append the variables number and it's index position
             entering_candidates.append(candidate)
 
@@ -275,28 +275,33 @@ def bland(D,eps):
     if len(entering_candidates) == 0:
         return None, 0
 
+
     # sort the candidates and take the first one
-    sorted(entering_candidates, key=itemgetter(0))
+    entering_candidates.sort(key=itemgetter(0))
     n = entering_candidates[0][1]
 
     for i in range(1, h):                           # Find every leaving candidate
-        fraction = 0
-        if not D.C[i, n + 1] == 0 and not D.C[i, 0] == 0:
+        fraction = Fraction(0)
+        if not D.C[i, n + 1] == 0 and not D.C[i, 0] == 0: #if not D.C[i, n + 1] in [-eps, eps] and not D.C[i, 0] in [-eps, eps]
             fraction = Fraction(D.C[i, n + 1], D.C[i, 0])
         candidate = [fraction, i - 1]               # append the fraction a/b and the corresponding variables index position
         leaving_candidates.append(candidate)
 
+    # Check whether the dictionary is unbounded
+    if all((candidate[0] < 0) for candidate in leaving_candidates):
+        return n, None
+
     # Prune the candidates by taking the max of the set
-    #TODO THE ERROR IS RIGHT HERE <--------------------------------------------------------------------------
-    sorted(sorted(leaving_candidates, key=itemgetter(1)), reverse=True, key=itemgetter(0))
+    leaving_candidates.sort(key=itemgetter(1))
+    leaving_candidates.sort(reverse=True, key=itemgetter(0))
 
     # Sort the greatest candidates and pick the first one
     b = leaving_candidates[0][1]
 
-    print("entering candidates ", entering_candidates, " chosen candidate ", n)
-    print("leaving candidates ", leaving_candidates, " chosen candidate ", b)
+    #print("entering candidates ", entering_candidates, " chosen candidate ", n)
+    #print("leaving candidates ", leaving_candidates, " chosen candidate ", b)
     # index position of the best entering variable,
-    return n, 0 # N[k], B[l]
+    return n, b # N[k], B[l]
 
 def largest_coefficient(D,eps):
     # Assumes a feasible dictionary D and find entering and leaving
@@ -371,8 +376,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             return LPResult.UNBOUNDED, None
         
         #print("k is:", k, "l is:", l)
-    
-    return None,None
+
+    return None, None
   
 def run_examples():
     # Example 1
