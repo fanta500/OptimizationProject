@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import sys
 from decimal import Decimal
 from fractions import Fraction
 from enum import Enum
@@ -238,30 +239,34 @@ def bland(D,eps):
     largestCoef = np.sort(obj)[len(obj)-1]
     if largestCoef < 0:
         return None, None
-    indexInC = np.where(obj == largestCoef)[0][0]
-    k = indexInC
+    indexInN = np.where(obj == largestCoef)[0][0]
+    k = indexInN
 
     enteringVarColumn = D.C[1:, k+1]
     BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn))
-    BAarrTemp = np.copy(BAarr)
-    deletedRows = 0
+    # print("Before checking for div by 0")
+    # print(BAarr)
     for i in range(len(BAarr)):
         if BAarr[i, 1] == Fraction(0.0):
-            BAarrTemp = np.delete(BAarrTemp, i, 0)
-            deletedRows += 1
+            #BAarrTemp = np.delete(BAarrTemp, i, 0)
+            BAarr[i, 0] = Fraction(sys.float_info.max)
+            BAarr[i, 1] = Fraction('1')
+    # print("After checking for div by 0")
+    # print(BAarr)
 
-    BAarr = np.copy(BAarrTemp)
-    smallestRatio = np.sort(np.divide(BAarr[1:, 0], BAarr[1:, 1]))[0]
-
+    smallestRatio = np.sort(np.absolute(np.divide(BAarr[:, 0], BAarr[:, 1])))[0]
+    # print("smallest ratio is", smallestRatio)
+    # print("It has type", type(smallestRatio))
+    indexInB = None
     for i in range(len(BAarr)):
-        if smallestRatio == np.divide(BAarr[i, 0], BAarr[i, 1]):
-            print("smallest ratio found with elements")
-            print("b =", BAarr[i, 0])
-            print("a =", BAarr[i, 1])
-            indexInC = i+deletedRows
-        print("the index in C is")
-        print(indexInC)
-    l = indexInC
+        if smallestRatio == np.absolute(np.divide(BAarr[i, 0], BAarr[i, 1])):
+            # print("smallest ratio found with elements")
+            # print("b =", BAarr[i, 0])
+            # print("a =", BAarr[i, 1])
+            indexInB = i
+        # print("the index in B is")
+        # print(indexInB)
+    l = indexInB
 
     return k,l
 
