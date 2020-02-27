@@ -237,35 +237,49 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef < 0:
+    if largestCoef <= -eps <= 0 <= eps:
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
+    # print("the entering var index in N is")
+    # print(indexInN)
 
     enteringVarColumn = D.C[1:, k+1]
     BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn))
-    # print("Before checking for div by 0")
-    # print(BAarr)
     for i in range(len(BAarr)):
-        if BAarr[i, 1] == Fraction(0.0):
-            #BAarrTemp = np.delete(BAarrTemp, i, 0)
-            BAarr[i, 0] = Fraction(sys.float_info.max)
-            BAarr[i, 1] = Fraction('1')
-    # print("After checking for div by 0")
-    # print(BAarr)
+        if (-eps <= BAarr[i, 0] <= eps):
+            BAarr[i, 0] = Fraction(0.0)
+        if (-eps <= BAarr[i, 1] <= eps):
+            BAarr[i, 1] = Fraction(0.0)
 
-    smallestRatio = np.sort(np.absolute(np.divide(BAarr[:, 0], BAarr[:, 1])))[0]
-    # print("smallest ratio is", smallestRatio)
+        if (BAarr[i, 0] == Fraction(0.0) and (BAarr[i, 1] == Fraction(0.0))):
+            BAarr[i, 1] = Fraction(0.0)
+            BAarr[i, 0] = Fraction(1.0)
+        elif BAarr[i, 0] == Fraction(0.0):
+            signOf_a = np.sign(BAarr[i, 1])
+            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max)
+            BAarr[i, 0] = Fraction(1.0)
+
+    #smallestRatio = np.sort(np.absolute(np.divide(BAarr[:, 0], BAarr[:, 1])))[0]
+    highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    #print("smallest ratio is", smallestRatio)
+    # print("the highest ratio is", highestRatio)
+
     # print("It has type", type(smallestRatio))
     indexInB = None
     for i in range(len(BAarr)):
-        if smallestRatio == np.absolute(np.divide(BAarr[i, 0], BAarr[i, 1])):
-            # print("smallest ratio found with elements")
+        # if smallestRatio == np.absolute(np.divide(BAarr[i, 0], BAarr[i, 1])):
+        #     print("smallest ratio found with elements")
+        #     print("b =", BAarr[i, 0])
+        #     print("a =", BAarr[i, 1])
+        #     indexInB = i
+        if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
+            # print("highest ratio found with elements")
             # print("b =", BAarr[i, 0])
             # print("a =", BAarr[i, 1])
             indexInB = i
-        # print("the index in B is")
-        # print(indexInB)
+    # print("the leaving var index in B is")
+    # print(indexInB)    
     l = indexInB
 
     return k,l
@@ -334,8 +348,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    print("The dictionary is:")
-    print(D)
+    # print("The dictionary is:")
+    # print(D)
     while True:
         k, l = pivotrule(D)
         if k is None:
@@ -345,8 +359,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             return LPResult.UNBOUNDED, None 
 
         D.pivot(k,l)
-        print("The dictionary is:")
-        print(D)
+        # print("The dictionary is:")
+        # print(D)
         # unbounded = True
         # for i in range(1, len(D.B)):
         #     if D.C[i, k+1] < 0:

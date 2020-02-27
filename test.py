@@ -34,12 +34,12 @@ class TestRandomLP(unittest.TestCase):
             self.c = c
             self.A = A
             self.b = b
-            print(c)
+            #print(c)
             # print(A)
             # print(b)
             ################
             startTimeLinprog = time.time()
-            linprogRes = opt.linprog(-c, A, b)
+            linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
             endTimeLinprog = time.time()
             if (linprogRes.status == 2):
                 continue
@@ -52,8 +52,8 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeOur = endTimeOur - startTimeOur
             totalTimeOur += elapsedTimeOur
 
-            print("The initial problem is")
-            print(Dictionary(self.c, self.A, self.b))
+            # print("The initial problem is")
+            # print(Dictionary(self.c, self.A, self.b))
             print("Linprog returns" ,linprogRes.status)
             print("Our solution returns", res)
             print("problem number", i+1, "done.")
@@ -61,7 +61,7 @@ class TestRandomLP(unittest.TestCase):
 
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
-        print("Our solution is", totalTimeOur/totalTimeLinprog, "times as fast.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
         
 
 # class TestExample1(unittest.TestCase):
