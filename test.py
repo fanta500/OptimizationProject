@@ -39,7 +39,10 @@ class TestRandomLP(unittest.TestCase):
             # print(b)
             ################
             startTimeLinprog = time.time()
-            linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                continue
             endTimeLinprog = time.time()
             if (linprogRes.status == 2):
                 continue
