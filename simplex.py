@@ -253,17 +253,17 @@ def bland(D,eps):
     for i in range(len(BAarr)):
         #respect epsilon again here
         if (treat_as_zero(BAarr[i, 0], eps)):
-            BAarr[i, 0] = Fraction(0.0)
+            BAarr[i, 0] = Fraction(0,1)
         if (treat_as_zero(BAarr[i, 1], eps)):
-            BAarr[i, 1] = Fraction(0.0)
+            BAarr[i, 1] = Fraction(0,1)
         #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0.0) and (BAarr[i, 1] == Fraction(0.0))):
-            BAarr[i, 1] = Fraction(0.0)
-            BAarr[i, 0] = Fraction(1.0)
-        elif BAarr[i, 0] == Fraction(0.0):
+        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))):
+            BAarr[i, 1] = Fraction(0,1)
+            BAarr[i, 0] = Fraction(1,1)
+        elif BAarr[i, 0] == Fraction(0,1):
             signOf_a = np.sign(BAarr[i, 1])
             BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max)
-            BAarr[i, 0] = Fraction(1.0)
+            BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
