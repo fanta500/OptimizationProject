@@ -5,7 +5,7 @@ import time
 import scipy.optimize as opt
 from fractions import Fraction
 
-from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero
+from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_feasible
 
 def compareRes(ourRes, linprogRes):
     if (ourRes == LPResult.OPTIMAL and linprogRes == 0):
@@ -91,6 +91,42 @@ class TestRandomLP(unittest.TestCase):
         self.assertFalse(treat_as_zero(x3, eps))
         self.assertTrue(treat_as_zero(x1,eps))
         self.assertTrue(treat_as_zero(x2,eps))
+
+    def test_feasible_check(self):
+        # c = 5,  4, 3
+        # A = 2,  3, 1
+        #     4,  1, 2
+        #     3,  4, 2
+        # b = 5, 11, 8
+        c1, A1, b1 = np.array([5,4,3]),np.array([[2,3,1],[4,1,2],[3,4,2]]),np.array([5,11,8])
+        D1 = Dictionary(c1, A1, b1)
+        self.assertTrue(is_dictionary_feasible(D1, 0))
+
+        # c = -2, -1
+        # A = -1,  1
+        #     -1, -2
+        #      0,  1
+        # b = -1, -2, 1
+        c2, A2, b2 = np.array([-2,-1]),np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
+        D2 = Dictionary(c2, A2, b2)
+        self.assertFalse(is_dictionary_feasible(D2, 0))
+
+        # c = 5, 2
+        # A = 3, 1
+        #     2, 5
+        # b = 0, 5
+        c3, A3, b3 = np.array([5,2]),np.array([[3,1],[2,5]]),np.array([0,5])
+        D3 = Dictionary(c3, A3, b3)
+        self.assertTrue(is_dictionary_feasible(D3, 0))
+
+        # c =  1,  3
+        # A = -1, -1
+        #     -1,  1
+        #      1,  2
+        # b = 0, -1, 4
+        c4, A4, b4 = np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([0,-1,4])
+        D4 = Dictionary(c4, A4, b4)
+        self.assertTrue(is_dictionary_feasible(D4, 1)) # True because of eps
 
 # class TestExample1(unittest.TestCase):
 #     def setUp(self):
