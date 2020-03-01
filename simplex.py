@@ -204,8 +204,8 @@ class Dictionary:
             if i == l+1: #skip the row we already modified
                 continue
             else:
-                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
-                enteringCoef = float(Fraction(enteringCoef).limit_denominator())
+                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation) 
+                #enteringCoef = float(Fraction(enteringCoef).limit_denominator()) # This breaks Fraction. Tests still pass without.
                 self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
                 
@@ -219,6 +219,12 @@ class LPResult(Enum):
     OPTIMAL = 1
     INFEASIBLE = 2
     UNBOUNDED = 3
+
+def treat_as_zero(x, eps):
+    if -eps <= x and x <= eps:
+        return True
+    else:
+        return False
 
 def bland(D,eps):
     # Assumes a feasible dictionary D and finds entering and leaving
@@ -237,7 +243,7 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0
+    if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0 (largestCoef <= eps ??)
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
@@ -246,9 +252,9 @@ def bland(D,eps):
     BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn)) #glue the b values with the a values of the entering var
     for i in range(len(BAarr)):
         #respect epsilon again here
-        if (-eps <= BAarr[i, 0] <= eps):
+        if (treat_as_zero(BAarr[i, 0], eps)):
             BAarr[i, 0] = Fraction(0.0)
-        if (-eps <= BAarr[i, 1] <= eps):
+        if (treat_as_zero(BAarr[i, 1], eps)):
             BAarr[i, 1] = Fraction(0.0)
         #makes sure that the correct corner cases are treated properly
         if (BAarr[i, 0] == Fraction(0.0) and (BAarr[i, 1] == Fraction(0.0))):
@@ -308,6 +314,8 @@ def largest_increase(D,eps):
     k=l=None
     # TODO
     return k,l
+
+
 
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
