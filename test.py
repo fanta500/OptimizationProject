@@ -5,7 +5,8 @@ import time
 import scipy.optimize as opt
 from fractions import Fraction
 
-from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_feasible
+from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_feasible, is_x0_basic
+from simplex import aux_pivotrule
 
 def compareRes(ourRes, linprogRes):
     if (ourRes == LPResult.OPTIMAL and linprogRes == 0):
@@ -57,9 +58,9 @@ class TestRandomLP(unittest.TestCase):
 
             # print("The initial problem is")
             # print(Dictionary(self.c, self.A, self.b))
-            print("Linprog returns" ,linprogRes.status)
-            print("Our solution returns", res)
-            print("problem number", i+1, "done.")
+            #print("Linprog returns" ,linprogRes.status)
+            #print("Our solution returns", res)
+            #print("problem number", i+1, "done.")
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
@@ -127,6 +128,53 @@ class TestRandomLP(unittest.TestCase):
         c4, A4, b4 = np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([0,-1,4])
         D4 = Dictionary(c4, A4, b4)
         self.assertTrue(is_dictionary_feasible(D4, 1)) # True because of eps
+
+    def test_x0_base(self):
+        # A = -1,  1
+        #     -1, -2
+        #      0,  1
+        # b = -1, -2, 1
+        A,b = np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
+        D=Dictionary(None,A,b)
+        self.assertFalse(is_x0_basic(D))
+        
+        D.pivot(2,1)
+        self.assertTrue(is_x0_basic(D))
+
+    def test_auxpivot(self):
+        # A = -1,  1
+        #     -1, -2
+        #      0,  1
+        # b = -1, -2, 1
+        A,b = np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
+        D=Dictionary(None,A,b)
+        k, l = aux_pivotrule(D)
+        self.assertEqual(k, 2)
+        self.assertEqual(l, 1)
+
+        # A = -1,  1
+        #     -1, -2
+        #      0,  1
+        #      2, 3
+        #      2, 3
+        # b = -1, -2, 1, -4, 1
+        A,b = np.array([[-1,1],[-1,-2],[0,1],[2,3],[2,3]]),np.array([-1,-2,1,-4,1])
+        D=Dictionary(None,A,b)
+        k, l = aux_pivotrule(D)
+        self.assertEqual(k, 2)
+        self.assertEqual(l, 3)
+        
+        # A = -1,  1, 3
+        #     -1, -2, 3
+        #      0,  1, 3
+        # b = -1, -2, 1
+        A,b = np.array([[-1,1,3],[-1,-2,3],[0,1,3]]),np.array([-1,-2,1])
+        D=Dictionary(None,A,b)
+        k, l = aux_pivotrule(D)
+        self.assertEqual(k, 3)
+        self.assertEqual(l, 1)
+
+
 
 # class TestExample1(unittest.TestCase):
 #     def setUp(self):

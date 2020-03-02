@@ -322,6 +322,33 @@ def is_dictionary_feasible(D, eps):
             return False
     return True
 
+def get_x0_index(D):
+    # The index of x0, ie the value in D.N and D.B that corresponds to x0
+    _, w = D.C.shape
+    x0_index = w-1
+    return x0_index
+
+def aux_pivotrule(D):
+    # Choose pivot variables for first aux. dictionary pivot. 
+    # Select x0 as entering and leaving variable as the one with minimal (most negative) b. (Lecture 2, slide 40)
+    
+    # x0 seems to be located rightmost, but not specified for lp_solve so make sure
+    x0_index = get_x0_index(D) 
+    N_pos, = np.where(D.N == x0_index)[0]
+    k = N_pos
+
+    b_col = D.C[:,0] # value of objective function should be 0, so no need to remove
+    minimal_b = np.sort(b_col)[0] 
+    index_of_minimal = np.where(b_col == minimal_b)[0][0] # Is this also okay for floats?
+    l = index_of_minimal - 1
+
+    return k, l
+
+def is_x0_basic(D):
+    # Check if x0 is in basis
+    x0_index = get_x0_index(D)
+    return (x0_index in D.B)
+
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
     #    
