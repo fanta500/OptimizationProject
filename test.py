@@ -1,8 +1,10 @@
 import unittest
 import numpy as np
 from fractions import Fraction
-from simplex import lp_solve, Dictionary, bland, LPResult
-
+import random
+import time
+import scipy.optimize as opt
+from simplex import lp_solve, Dictionary, bland, LPResult, random_lp
 
 class TestQuestionablePython(unittest.TestCase):
     def test_fractions(self):
@@ -11,7 +13,7 @@ class TestQuestionablePython(unittest.TestCase):
 
 """
     Entering:   Choose the first nonbasic variable with non-negative coefficient.
-    Leaving:  Choose the basic variable with lowest index i from the set {\forall i : max(a/b)}
+    Leaving:  Choose the basic variable with lowest index i from the set {forall i : max(a/b)}
 """
 #TODO ændre matricerne til 5x5 i stedet for 3x3
 class TestBland(unittest.TestCase):
@@ -71,6 +73,7 @@ class TestBland(unittest.TestCase):
                 0,  0, -2, -3
                 6, -1, -1, -1
 
+from fractions import Fraction
                 should choose: [0, 1] - entering index = 0 from {2,3,5}, leaving index = 1 from {0/0} subset of max({-3/8 (-0.375), 0/0 (0), -1/6 (-0.166..)})
         """
 
@@ -120,6 +123,58 @@ class TestBland(unittest.TestCase):
         d = Dictionary(np.array([4, 5]), np.array([[4, -12], [9, -7]]), np.array([14, 7]))
         n, b = bland(d, 0)
         self.assertEqual(None, b)
+
+
+class TestRandomLP(unittest.TestCase):
+    # def setUp(self):
+    #     c, A, b = random_lp(random.randrange(20), random.randrange(20))
+    #     self.c = c
+    #     self.A = A
+    #     self.b = b
+    #     # print(c)
+    #     # print(A)
+    #     # print(b)
+
+    def test_solve(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp(random.randrange(1, 10), random.randrange(1, 10))
+            d = Dictionary(c, A, b)
+            # print(c)
+            # print(A)
+            # print(b)
+            ################
+            startTimeLinprog = time.time()
+            linprogRes = opt.linprog(-c, A, b)
+            endTimeLinprog = time.time()
+            if (linprogRes.status == 2):
+                continue
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            startTimeOur = time.time()
+            res, _ = lp_solve(c, A, b)
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+
+            # print("The initial problem is")
+            # print(Dictionary(self.c, self.A, self.b))
+            print("Linprog returns", linprogRes.status)
+            print("Our solution returns", res)
+            print("problem number", i + 1, "done.")
+            if linprogRes == 0:
+                self.assertEqual(LPResult.OPTIMAL, res)
+            elif linprogRes == 2:
+                self.assertEqual(LPResult.INFEASIBLE, res)
+            elif linprogRes == 3:
+                self.assertEqual(LPResult.UNBOUNDED, res)
+
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog / totalTimeOur, "times as fast.")
 
 
 class TestPivot(unittest.TestCase):

@@ -208,6 +208,8 @@ class Dictionary:
 
                 elif j == k+1:
                     if self.dtype == Fraction:
+                        if a == 0:
+                            newDict[i, j] = Fraction(0)
                         newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
                     # if self.dtype == int:
 
@@ -218,7 +220,10 @@ class Dictionary:
 
                 else:
                     if self.dtype == Fraction:
-                        newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1] * self.C[l+1, j]) / a)).limit_denominator()
+                        if a == 0:
+                            newDict[i, j] = Fraction(0)
+                        else:
+                            newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
                     # if self.dtype == int:
         self.C = newDict
 
@@ -232,7 +237,8 @@ class LPResult(Enum):
     INFEASIBLE = 2
     UNBOUNDED = 3
 
-def bland(D,eps):
+
+def bland(D, eps):
     # Assumes a feasible dictionary D and finds entering and leaving
     # variables according to Bland's rule.
     #
@@ -258,32 +264,80 @@ def bland(D,eps):
              |    h
     """
 
+    # For at tjekke a/0 for alle a, så burde leaving_candidates indeholde et ekstra boolean element
+    # True for +infty, False ellers. (Ellers kunne man også komme frem til at prune elementer som ikke er bedre end den første)
+
     h, w = D.C.shape
 
-    entering_candidates = []
-    leaving_candidates = []
+    # initially, index position: width of array + 1
+    n = [w + 1, -1]
 
-    # List of every positive number and index position in D.N
+    # initially [value -1/1, index position: height + 1, infinity flag: False]
+    b = [Fraction(-1, 1), h + 1, False]
 
-
-    for i in range(1, w):                           # Loop through the objective function
-        if D.C[0, i] > eps:                         # note c if it is strictly positive
-            candidate = [D.N[i - 1], i - 1]         # append the variables number and it's index position
-            entering_candidates.append(candidate)
+    for i in range(1, w):           # Loop through the objective function
+        c = D.C[0, i]
+        if c > eps:                 # Verify that c if it is strictly positive
+            if D.N[i - 1] < n[0]:   # Check for a lower possible index position
+                n = [D.N[i - 1], i] # Overwrite the variables number and it's index position
 
     # Bail out fast
-    if len(entering_candidates) == 0:
+    if n[1] < 0:            # If the index position is impossible {0, width} < width + 1
         return None, 0
 
+    for i in range(1, h):
+        a = -D.C[i, n[1]]   # Negated a
+        b = D.C[i, 0]
+        if -eps < a < eps:
+            a = 0
+        if -eps < b < eps:
+            b = 0
 
-    # sort the candidates and take the first one
-    entering_candidates.sort(key=itemgetter(0))
-    n = entering_candidates[0][1]
 
+    #for i in range(1, h):                           # Find every leaving candidate
+    #    fraction = Fraction(0)
+    #    a = D.C[i, n + 1]
+    #    b = D.C[i, 0]
+    #    if not a == 0 and not b == 0: # not 0/0
+    #    #if not D.C[i, n + 1] in [-eps, eps] and not D.C[i, 0] in [-eps, eps]
+    #        fraction = Fraction(a, b)
+    #    elif b == 0:
+    #        if a > 0:
+    #            fraction = Fraction(999999, 1) #lappeløsning
+    #        else:
+    #            fraction = Fraction(-999999, 1)
+    #    candidate = [fraction, i - 1]               # append the fraction a/b and the corresponding variables index position
+    #    leaving_candidates.append(candidate)
+
+    # if infty
+    #   fraction = 1/1
+    # else
+    #   if not 0/0          // Should be a/b != eps/-eps (equal to -eps/eps)
+    #       if best <= a/b
+    #           best = a/b
+    #           fraction = a/b
+    #       res = a/b
+    #   elif a/0
+    #       fraction = 1/1
+    #       infty = True
+
+    best = Fraction(-999999, 1)
+    infty = False
     for i in range(1, h):                           # Find every leaving candidate
         fraction = Fraction(0)
-        if not D.C[i, n + 1] == 0 and not D.C[i, 0] == 0: #if not D.C[i, n + 1] in [-eps, eps] and not D.C[i, 0] in [-eps, eps]
-            fraction = Fraction(D.C[i, n + 1], D.C[i, 0])
+        a = D.C[i, n + 1]
+        b = D.C[i, 0]
+        if infty:
+            fraction = Fraction(1/1)
+        else:
+            if not a == 0 and not b == 0: # not 0/0
+            #if not D.C[i, n + 1] in [-eps, eps] and not D.C[i, 0] in [-eps, eps]
+                if best > Fraction(a, b):
+                    fraction = Fraction(a, b)
+            elif b == 0:
+                if a > 0:
+                    fraction = Fraction(1/1)
+                    infty = True
         candidate = [fraction, i - 1]               # append the fraction a/b and the corresponding variables index position
         leaving_candidates.append(candidate)
 
@@ -365,20 +419,11 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         k, l = pivotrule(D)
         if k is None:
             return LPResult.OPTIMAL, D
-        unbounded = True
-        for i in range(1, len(D.B)):
-            if D.C[i, k+1] < 0:
-                unbounded = False
-                continue
-        if k is not None and not unbounded: 
-            D.pivot(k,l)
-        if unbounded:
+        elif l is None:
             return LPResult.UNBOUNDED, None
-        
-        #print("k is:", k, "l is:", l)
 
-    return None, None
-  
+        D.pivot(k, l)
+
 def run_examples():
     # Example 1
     c,A,b = example1()
