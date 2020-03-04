@@ -386,14 +386,8 @@ def is_x0_basic(D):
 
 
 def express_objective(D_origin, D_aux):
-    #print("Convert the objective function")
-    #print("The origin dict is ")
-    #print(D_origin)
-    #print("The aux dict is ")
-    #print(D_aux)
-
     _, width = D_aux.C.shape
-    D_aux.C[0] = np.zeros(width) # ensure all coefs in aux obj are 0
+    D_aux.C[0] = np.zeros(width, D_origin.dtype) # ensure all coefs in aux obj are 0
     obj_origin = D_origin.C[0]
 
     for i in range(1, width): # variables 1 to n are the original variables
