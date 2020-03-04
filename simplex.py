@@ -243,7 +243,7 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     try:
-        lowestIndexWithPosCoef = np.where(obj > 0)[0][0] #leftmost column with coef > 0
+        lowestIndexWithPosCoef = np.where(obj > eps)[0][0] #leftmost column with coef > 0
     except:
         return None, None
     k = lowestIndexWithPosCoef
@@ -423,25 +423,42 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         while True: 
             #make pivots in the now feasible dict
             k_aux, l_aux = pivotrule(D_aux)
-            print("Index of entering is", k_aux, "and index of leaving is", l_aux)
+            # print("Index of entering is", k_aux, "and index of leaving is", l_aux)
             if k_aux is None: #if the entering var is none, then the aux dict is optimal
                 break
             D_aux.pivot(k_aux, l_aux)
             print("The aux dict is")
             print(D_aux)
         objValueAux = D_aux.C[0,0]
-        print("The value of the objective func is", objValueAux)
+        # print("The value of the objective func is", objValueAux)
         if objValueAux < -eps: #if the optimal aux dict has optimal solution less than 0, the original LP is infeasible
             return LPResult.INFEASIBLE, None  
+        print("The aux dict is")
+        print(D_aux) 
         if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
             print("x0 is basic")
             x0_index = get_x0_index(D_aux) 
             B_pos, = np.where(D_aux.B == x0_index)[0]
             l = B_pos
             D_aux.pivot(len(D_aux.C[0])-2, l)
+            D_aux.C = np.delete(D_aux.C, l+1, axis=1)
+            D_aux.N = np.delete(D_aux.N, l)
+            lastAuxDictCoefs = D_aux.C
+        else: #if x0 is not in the basis, remove it
+            x0_index = get_x0_index(D_aux) 
+            N_pos, = np.where(D_aux.N == x0_index)[0]
+            l = N_pos
+            D_aux.C = np.delete(D_aux.C, l+1, axis=1) #delete the column that is x0
+            D_aux.N = np.delete(D_aux.N, l)
+            lastAuxDictCoefs = D_aux.C
+        # for i in range(len(D_aux.C)):
+        #     if 
+
+        #print("The original objective function is", c)
         print("The aux dict is")
         print(D_aux)  
-        D.C = D_aux.C[:,:-1]
+
+        
     
     while True:
         k, l = pivotrule(D)
@@ -532,13 +549,13 @@ def run_examples():
     # print(D)
     # print()
 
-    # # Solve Exercise 2.7 using lp_solve
-    # c,A,b = exercise2_7()
-    # print('lp_solve Exercise 2.7:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exercise 2.7 using lp_solve
+    c,A,b = exercise2_7()
+    print('lp_solve Exercise 2.7:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
     # #Integer pivoting
     # c,A,b=example1()
