@@ -180,31 +180,6 @@ class Dictionary:
             return self.C[0, 0]
 
     def pivot(self, k, l):
-        # print("The coeffecients are", self.C)
-        # print("Entering is", self.N[k])
-        # print("Leaving is", self.B[l])
-        # a = self.C[l+1, k+1]
-        # h, w = self.C.shape
-
-        # newDict = np.zeros((h, w), dtype = self.dtype)
-
-        # for i in range(h):
-        #     for j in range(w):
-        #         if i == l+1 and j == k+1:
-        #             newDict[i, j] = Fraction(1/self.C[i, j]).limit_denominator()
-        #         elif j == k+1:
-        #             newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
-        #         elif i == l+1:
-        #             newDict[i, j] = Fraction(-self.C[i, j] / a).limit_denominator()
-        #         else:
-        #             newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
-
-        # self.C = newDict
-
-        # temp = self.B[l]
-        # self.B[l] = self.N[k]
-        # self.N[k] = temp
-
         '''
             DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
         '''    
@@ -437,15 +412,45 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    #print(D)
+    print("The original dict is")
+    print(D)
+    if is_dictionary_infeasible(D, eps):
+        D_aux = Dictionary(None, A, b)
+        print("The aux dict is")
+        print(D_aux)
+        k_aux, l_aux = aux_pivotrule(D_aux)
+        c_aux = D_aux.C[0,:]
+        A_aux = D_aux.C[1:,1:]
+        b_aux = D_aux.C[1:,0]
+        D_aux.pivot(k_aux, l_aux)
+        print("The aux dict is")
+        print(D_aux)
+        while True:
+            k_aux, l_aux = pivotrule(D_aux)
+            print("Index of entering is", k_aux, "and index of leaving is", l_aux)
+            if k_aux is None:
+                break
+            D_aux.pivot(k_aux, l_aux)
+            print("The aux dict is")
+            print(D_aux)
+        objValueAux = D_aux.C[0,0]
+        if objValueAux < -eps:
+            return LPResult.INFEASIBLE, None  
+        if is_x0_basic(D_aux):
+            print("x0 is basic")
+            x0_index = get_x0_index(D_aux) 
+            B_pos, = np.where(D_aux.B == x0_index)[0]
+            l = B_pos
+            D_aux.pivot(len(D_aux.C[0])-2, l)
+        print("The aux dict is")
+        print(D_aux)  
+        D.C = D_aux.C[:,:-1]
+    print(D)
     while True:
         k, l = pivotrule(D)
 
         if k is None:
             return LPResult.OPTIMAL, D
-
-        if is_dictionary_infeasible(D, eps):
-            return LPResult.INFEASIBLE, None
 
         if checkUnbounded(D, k):
             return LPResult.UNBOUNDED, None 
@@ -563,6 +568,16 @@ def run_examples():
     print('x2 is entering and x4 leaving:')
     D.pivot(1,1)
     print(D)
+
+    # Solve Exmaple slide 42 lec 2 using lp_solve
+    c = np.array([1,-1,1])
+    A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
+    b = np.array([-5,4,-1])
+    print('lp_solve Ex 42 2')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
 if __name__ == "__main__":
     run_examples()
