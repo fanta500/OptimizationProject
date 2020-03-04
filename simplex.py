@@ -247,9 +247,7 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    if -eps <= largestCoef <= eps:
-        largestCoef = 0
-    if largestCoef < -eps: #if the largest coef is smaller than -eps, return optimal
+    if largestCoef <= eps: #if the largest coef is smaller or equal to eps, return optimal
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
@@ -322,12 +320,12 @@ def largest_increase(D,eps):
     # TODO
     return k,l
 
-def is_dictionary_feasible(D, eps):
+def is_dictionary_infeasible(D, eps):
     # Dict. is feasible if all b's are nonnegative. Ie C[i,0] >= 0 (with eps).
     for i in range(len(D.B)):
         if D.C[i+1, 0] < -eps:
-            return False
-    return True
+            return True
+    return False
 
 def get_x0_index(D):
     # The index of x0, ie the value in D.N and D.B that corresponds to x0
@@ -380,6 +378,9 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
+    if is_dictionary_infeasible(D, eps):
+        return LPResult.INFEASIBLE, None
+
     while True:
         k, l = pivotrule(D)
         if k is None:

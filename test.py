@@ -5,7 +5,7 @@ import time
 import scipy.optimize as opt
 from fractions import Fraction
 
-from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_feasible, is_x0_basic
+from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_infeasible, is_x0_basic
 from simplex import aux_pivotrule
 
 def compareRes(ourRes, linprogRes):
@@ -17,52 +17,50 @@ def compareRes(ourRes, linprogRes):
         return True
 
 class TestRandomLP(unittest.TestCase):
-    # def setUp(self):
-    #     c, A, b = random_lp(random.randrange(20), random.randrange(20))
-    #     self.c = c
-    #     self.A = A
-    #     self.b = b
-    #     # print(c)
-    #     # print(A)
-    #     # print(b)
-
     def test_solve(self):
         totalTimeOur = 0
         totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
+            c, A, b = random_lp(random.randrange(1,10), random.randrange(1,10))
             self.c = c
             self.A = A
             self.b = b
-            #print(c)
+            # print(c)
             # print(A)
             # print(b)
             ################
-            startTimeLinprog = time.time()
-            try:
-                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
-            except:
-                continue
-            endTimeLinprog = time.time()
-            if (linprogRes.status == 2):
-                continue
-            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
-            totalTimeLinprog += elapsedTimeLinprog
-
             startTimeOur = time.time()
             res, _ = lp_solve(self.c, self.A, self.b)
             endTimeOur = time.time()
             elapsedTimeOur = endTimeOur - startTimeOur
             totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
 
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                continue
+            endTimeLinprog = time.time()
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                continue
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
             # print("The initial problem is")
             # print(Dictionary(self.c, self.A, self.b))
-            #print("Linprog returns" ,linprogRes.status)
-            #print("Our solution returns", res)
-            #print("problem number", i+1, "done.")
+            # print("Linprog returns" ,linprogRes.status)
+            # print("Our solution returns", res)
+            # print("problem number", i+1, "done.")
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
@@ -101,7 +99,7 @@ class TestRandomLP(unittest.TestCase):
         # b = 5, 11, 8
         c1, A1, b1 = np.array([5,4,3]),np.array([[2,3,1],[4,1,2],[3,4,2]]),np.array([5,11,8])
         D1 = Dictionary(c1, A1, b1)
-        self.assertTrue(is_dictionary_feasible(D1, 0))
+        self.assertFalse(is_dictionary_infeasible(D1, 0))
 
         # c = -2, -1
         # A = -1,  1
@@ -110,7 +108,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1
         c2, A2, b2 = np.array([-2,-1]),np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
         D2 = Dictionary(c2, A2, b2)
-        self.assertFalse(is_dictionary_feasible(D2, 0))
+        self.assertTrue(is_dictionary_infeasible(D2, 0))
 
         # c = 5, 2
         # A = 3, 1
@@ -118,7 +116,7 @@ class TestRandomLP(unittest.TestCase):
         # b = 0, 5
         c3, A3, b3 = np.array([5,2]),np.array([[3,1],[2,5]]),np.array([0,5])
         D3 = Dictionary(c3, A3, b3)
-        self.assertTrue(is_dictionary_feasible(D3, 0))
+        self.assertFalse(is_dictionary_infeasible(D3, 0))
 
         # c =  1,  3
         # A = -1, -1
@@ -127,7 +125,7 @@ class TestRandomLP(unittest.TestCase):
         # b = 0, -1, 4
         c4, A4, b4 = np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.array([0,-1,4])
         D4 = Dictionary(c4, A4, b4)
-        self.assertTrue(is_dictionary_feasible(D4, 1)) # True because of eps
+        self.assertFalse(is_dictionary_infeasible(D4, 1)) # True because of eps
 
     def test_x0_base(self):
         # A = -1,  1
