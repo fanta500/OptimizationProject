@@ -196,7 +196,7 @@ class Dictionary:
         row = -np.copy(self.C[l+1]) #row of leaving var
         row = np.divide(row, a) #div all coefs by a
         row[k+1] = np.divide(1, a) #set the leaving var to -1/a
-        print("the row of the leaving var is", row)
+        #print("the row of the leaving var is", row)
         self.C[l+1] = row
         # Update C
         for i in range(len(self.C)):
@@ -243,7 +243,7 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     try:
-        print(np.where(obj > eps))
+        #print(np.where(obj > eps))
         lowestIndexWithPosCoef = np.where(obj > eps)[0][0] #leftmost column with coef > 0
     except:
         return None, None
@@ -384,6 +384,42 @@ def is_x0_basic(D):
     x0_index = get_x0_index(D)
     return (x0_index in D.B)
 
+
+def express_objective(D_origin, D_aux):
+    #print("Convert the objective function")
+    #print("The origin dict is ")
+    #print(D_origin)
+    #print("The aux dict is ")
+    #print(D_aux)
+
+    _, width = D_aux.C.shape
+    D_aux.C[0] = np.zeros(width) # ensure all coefs in aux obj are 0
+    obj_origin = D_origin.C[0]
+
+    for i in range(1, width): # variables 1 to n are the original variables
+        # i is the index of the variable
+        origin_factor = obj_origin[i]
+        #print("The factor for x", i, " is ", origin_factor)
+
+        aux_present = np.where(D_aux.B == i)[0]
+        #print("The search for the variable in aux gave: ", aux_present)
+        should_obj_change = (len(aux_present) == 1)
+        #print("Should obj change for x", i, ": ", should_obj_change)
+        if should_obj_change:
+            nonbase_row_index = aux_present[0] + 1
+            nonbase_row = D_aux.C[nonbase_row_index]
+            #print("The additive row for x", i, "is:", origin_factor * nonbase_row)
+            D_aux.C[0] = D_aux.C[0] + origin_factor * nonbase_row
+        else:
+            new_index = np.where(D_aux.N == i)[0][0] + 1
+            #print("Adding", origin_factor, "to ", D_aux.C[0,new_index])
+            D_aux.C[0, new_index] += origin_factor
+        #print("The dict is now\n", D_aux)
+    
+    #print("The new feasible dict is\n", D_aux)
+    return D_aux
+
+
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
     #    
@@ -413,13 +449,13 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     if is_dictionary_infeasible(D, eps):
         #create aux dict. Using none makes it for us
         D_aux = Dictionary(None, A, b)
-        print("The aux dict is")
-        print(D_aux)
+        #print("The aux dict is")
+        #print(D_aux)
         #make initial pivot of x0 and the most "infeasible" (largest negative value) basic var
         k_aux, l_aux = aux_pivotrule(D_aux)
         D_aux.pivot(k_aux, l_aux)
-        print("The aux dict is")
-        print(D_aux)
+        #print("The aux dict is")
+        #print(D_aux)
         while True: 
             #make pivots in the now feasible dict
             k_aux, l_aux = pivotrule(D_aux)
@@ -427,14 +463,14 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             if k_aux is None: #if the entering var is none, then the aux dict is optimal
                 break
             D_aux.pivot(k_aux, l_aux)
-            print("The aux dict is")
-            print(D_aux)
+            #print("The aux dict is")
+            #print(D_aux)
         objValueAux = D_aux.C[0,0]
         # print("The value of the objective func is", objValueAux)
         if objValueAux < -eps: #if the optimal aux dict has optimal solution less than 0, the original LP is infeasible
             return LPResult.INFEASIBLE, None  
-        print("The aux dict is")
-        print(D_aux) 
+        #print("The aux dict is")
+        #print(D_aux) 
         if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
             print("x0 is basic")
             x0_index = get_x0_index(D_aux) 
@@ -460,7 +496,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         print("The aux dict is")
         print(D_aux)  
 
-        
+    D = express_objective(D, D_aux)
+    #return None, None
     
     while True:
         k, l = pivotrule(D)
@@ -585,15 +622,15 @@ def run_examples():
     # D.pivot(1,1)
     # print(D)
 
-    # # Solve Exmaple slide 42 lec 2 using lp_solve
-    # c = np.array([1,-1,1])
-    # A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
-    # b = np.array([-5,4,-1])
-    # print('lp_solve Ex 42 2')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exmaple slide 42 lec 2 using lp_solve
+    c = np.array([1,-1,1])
+    A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
+    b = np.array([-5,4,-1])
+    print('lp_solve Ex 42 2')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
 if __name__ == "__main__":
     run_examples()
