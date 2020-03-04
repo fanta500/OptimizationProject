@@ -218,7 +218,7 @@ class Dictionary:
 
                 else:
                     if self.dtype == Fraction:
-                        newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
+                        newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1] * self.C[l+1, j]) / a)).limit_denominator()
                     # if self.dtype == int:
         self.C = newDict
 
