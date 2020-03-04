@@ -246,12 +246,13 @@ def bland(D,eps):
     k = l = None
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
-    largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef <= eps: #if the largest coef is smaller or equal to eps, return optimal
+    try:
+        lowestIndexWithPosCoef = np.where(obj > 0)[0][0] #leftmost column with coef > 0
+    except:
         return None, None
-    indexInN = np.where(obj == largestCoef)[0][0]
-    k = indexInN
+    k = lowestIndexWithPosCoef
 
+    
     enteringVarColumn = D.C[1:, k+1]
     bValueColumn = D.C[1:, 0]
     BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
@@ -271,10 +272,13 @@ def bland(D,eps):
             BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
+    ratios = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))
+    print(ratios)
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    print(highestRatio)
     indexInB = None
     for i in range(len(BAarr)):
-        if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
+        if highestRatio == np.divide(BAarr[i, 1], BAarr[i, 0]):
             indexInB = i  
     l = indexInB
 
@@ -299,8 +303,41 @@ def largest_coefficient(D,eps):
     # l is None if D is Unbounded
     # Otherwise D.B[l] is a leaving variable
     
-    k=l=None
-    # TODO
+    k = l = None
+
+    obj = D.C[0, 1:] #this selects the first row and all columns except the first one
+    largestCoef = np.sort(obj)[len(obj)-1]
+    if largestCoef <= eps: #if the largest coef is smaller or equal to eps, return optimal
+        return None, None
+    indexInN = np.where(obj == largestCoef)[0][0]
+    k = indexInN
+
+    enteringVarColumn = D.C[1:, k+1]
+    bValueColumn = D.C[1:, 0]
+    BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
+    for i in range(len(BAarr)):
+        #respect epsilon again here
+        if (treat_as_zero(BAarr[i, 0], eps)):
+            BAarr[i, 0] = Fraction(0,1)
+        if (treat_as_zero(BAarr[i, 1], eps)):
+            BAarr[i, 1] = Fraction(0,1)
+        #makes sure that the correct corner cases are treated properly
+        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case
+            BAarr[i, 1] = Fraction(0,1) #set a to be 0
+            BAarr[i, 0] = Fraction(1,1) #set b to be 1. Ends up being -0/1 which is 0
+        elif BAarr[i, 0] == Fraction(0,1):
+            signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
+            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max).limit_denominator()
+            BAarr[i, 0] = Fraction(1,1)
+
+    # apparently we should use highest ratio of a/b instead of lowest of b/a. Section 2.4 in Vanderbei
+    highestRatio = np.sort(np.divide(BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    indexInB = None
+    for i in range(len(BAarr)):
+        if highestRatio == np.divide(BAarr[i, 1], BAarr[i, 0]):
+            indexInB = i  
+    l = indexInB
+
     return k,l
 
 def largest_increase(D,eps):
@@ -378,13 +415,15 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    if is_dictionary_infeasible(D, eps):
-        return LPResult.INFEASIBLE, None
-
+    print(D)
     while True:
         k, l = pivotrule(D)
+
         if k is None:
             return LPResult.OPTIMAL, D
+
+        if is_dictionary_infeasible(D, eps):
+            return LPResult.INFEASIBLE, None
 
         if checkUnbounded(D, k):
             return LPResult.UNBOUNDED, None 
