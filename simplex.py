@@ -179,16 +179,12 @@ class Dictionary:
         else:
             return self.C[0, 0]
 
-    def pivot(self, k, l):
-        '''
-            DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
-        '''    
+    def pivot(self, k, l):  
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
         a = self.C[l+1,k+1] # Coefficient to divide leaving equation by when solving for entering?
-        if a < 0:
-            a = -a
+        
         xEntering = self.N[k]
         xLeaving = self.B[l]
         # print("The dictionary is")
@@ -197,18 +193,18 @@ class Dictionary:
         # print("Leaving var is", xLeaving)
         
         # Solve xLeaving equation for xEntering
-        row = self.C[l+1] #row of leaving var
-        row = row/a #div all coefs by a
-        row[k+1] = -1/a #set the leaving var to -1/a
+        row = -np.copy(self.C[l+1]) #row of leaving var
+        row = np.divide(row, a) #div all coefs by a
+        row[k+1] = np.divide(1, a) #set the leaving var to -1/a
+        print("the row of the leaving var is", row)
         self.C[l+1] = row
         # Update C
         for i in range(len(self.C)):
             if i == l+1: #skip the row we already modified
                 continue
             else:
-                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation) 
-                #enteringCoef = float(Fraction(enteringCoef).limit_denominator()) # This breaks Fraction. Tests still pass without.
-                self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
+                enteringCoef = np.copy(self.C[i, k+1]) #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
+                self.C[i] = self.C[i] + enteringCoef * row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
             # print("The dictionary is")
             # print(self)
@@ -446,7 +442,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         print("The aux dict is")
         print(D_aux)  
         D.C = D_aux.C[:,:-1]
-    print(D)
+    
     while True:
         k, l = pivotrule(D)
 
@@ -461,64 +457,64 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     return None,None
   
 def run_examples():
-    # Example 1
-    c,A,b = example1()
-    D=Dictionary(c,A,b)
-    print('Example 1 with Fraction')
-    print('Initial dictionary:')
-    print(D)
-    print('x1 is entering and x4 leaving:')
-    D.pivot(0,0)
-    print(D)
-    print('x3 is entering and x6 leaving:')
-    D.pivot(2,2)
-    print(D)
-    print()
+    # # Example 1
+    # c,A,b = example1()
+    # D=Dictionary(c,A,b)
+    # print('Example 1 with Fraction')
+    # print('Initial dictionary:')
+    # print(D)
+    # print('x1 is entering and x4 leaving:')
+    # D.pivot(0,0)
+    # print(D)
+    # print('x3 is entering and x6 leaving:')
+    # D.pivot(2,2)
+    # print(D)
+    # print()
 
-    D=Dictionary(c,A,b,np.float64)
-    print('Example 1 with np.float64')
-    print('Initial dictionary:')
-    print(D)
-    print('x1 is entering and x4 leaving:')
-    D.pivot(0,0)
-    print(D)
-    print('x3 is entering and x6 leaving:')
-    D.pivot(2,2)
-    print(D)
-    print()
+    # D=Dictionary(c,A,b,np.float64)
+    # print('Example 1 with np.float64')
+    # print('Initial dictionary:')
+    # print(D)
+    # print('x1 is entering and x4 leaving:')
+    # D.pivot(0,0)
+    # print(D)
+    # print('x3 is entering and x6 leaving:')
+    # D.pivot(2,2)
+    # print(D)
+    # print()
 
-    # Example 2
-    c,A,b = example2()
-    print('Example 2')
-    print('Auxillary dictionary')
-    D=Dictionary(None,A,b)
-    print(D)
-    print('x0 is entering and x4 leaving:')
-    D.pivot(2,1)
-    print(D)
-    print('x2 is entering and x3 leaving:')
-    D.pivot(1,0)
-    print(D)
-    print('x1 is entering and x0 leaving:')
-    D.pivot(0,1)
-    print(D)
-    print()
+    # # Example 2
+    # c,A,b = example2()
+    # print('Example 2')
+    # print('Auxillary dictionary')
+    # D=Dictionary(None,A,b)
+    # print(D)
+    # print('x0 is entering and x4 leaving:')
+    # D.pivot(2,1)
+    # print(D)
+    # print('x2 is entering and x3 leaving:')
+    # D.pivot(1,0)
+    # print(D)
+    # print('x1 is entering and x0 leaving:')
+    # D.pivot(0,1)
+    # print(D)
+    # print()
 
-    # Solve Example 1 using lp_solve
-    c,A,b = example1()
-    print('lp_solve Example 1:')
-    res,D=lp_solve(c,A,b)
-    print(res)
-    print(D)
-    print()
+    # # Solve Example 1 using lp_solve
+    # c,A,b = example1()
+    # print('lp_solve Example 1:')
+    # res,D=lp_solve(c,A,b)
+    # print(res)
+    # print(D)
+    # print()
 
-    # Solve Example 2 using lp_solve
-    c,A,b = example2()
-    print('lp_solve Example 2:')
-    res,D=lp_solve(c,A,b)
-    print(res)
-    print(D)
-    print()
+    # # Solve Example 2 using lp_solve
+    # c,A,b = example2()
+    # print('lp_solve Example 2:')
+    # res,D=lp_solve(c,A,b)
+    # print(res)
+    # print(D)
+    # print()
 
     # Solve Exercise 2.5 using lp_solve
     c,A,b = exercise2_5()
@@ -528,57 +524,57 @@ def run_examples():
     print(D)
     print()
 
-    # Solve Exercise 2.6 using lp_solve
-    c,A,b = exercise2_6()
-    print('lp_solve Exercise 2.6:')
-    res,D=lp_solve(c,A,b)
-    print(res)
-    print(D)
-    print()
+    # # Solve Exercise 2.6 using lp_solve
+    # c,A,b = exercise2_6()
+    # print('lp_solve Exercise 2.6:')
+    # res,D=lp_solve(c,A,b)
+    # print(res)
+    # print(D)
+    # print()
 
-    # Solve Exercise 2.7 using lp_solve
-    c,A,b = exercise2_7()
-    print('lp_solve Exercise 2.7:')
-    res,D=lp_solve(c,A,b)
-    print(res)
-    print(D)
-    print()
+    # # Solve Exercise 2.7 using lp_solve
+    # c,A,b = exercise2_7()
+    # print('lp_solve Exercise 2.7:')
+    # res,D=lp_solve(c,A,b)
+    # print(res)
+    # print(D)
+    # print()
 
-    #Integer pivoting
-    c,A,b=example1()
-    D=Dictionary(c,A,b,int)
-    print('Example 1 with int')
-    print('Initial dictionary:')
-    print(D)
-    print('x1 is entering and x4 leaving:')
-    D.pivot(0,0)
-    print(D)
-    print('x3 is entering and x6 leaving:')
-    D.pivot(2,2)
-    print(D)
-    print()
+    # #Integer pivoting
+    # c,A,b=example1()
+    # D=Dictionary(c,A,b,int)
+    # print('Example 1 with int')
+    # print('Initial dictionary:')
+    # print(D)
+    # print('x1 is entering and x4 leaving:')
+    # D.pivot(0,0)
+    # print(D)
+    # print('x3 is entering and x6 leaving:')
+    # D.pivot(2,2)
+    # print(D)
+    # print()
 
-    c,A,b = integer_pivoting_example()
-    D=Dictionary(c,A,b,int)
-    print('Integer pivoting example from lecture')
-    print('Initial dictionary:')
-    print(D)
-    print('x1 is entering and x3 leaving:')
-    D.pivot(0,0)
-    print(D)
-    print('x2 is entering and x4 leaving:')
-    D.pivot(1,1)
-    print(D)
+    # c,A,b = integer_pivoting_example()
+    # D=Dictionary(c,A,b,int)
+    # print('Integer pivoting example from lecture')
+    # print('Initial dictionary:')
+    # print(D)
+    # print('x1 is entering and x3 leaving:')
+    # D.pivot(0,0)
+    # print(D)
+    # print('x2 is entering and x4 leaving:')
+    # D.pivot(1,1)
+    # print(D)
 
-    # Solve Exmaple slide 42 lec 2 using lp_solve
-    c = np.array([1,-1,1])
-    A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
-    b = np.array([-5,4,-1])
-    print('lp_solve Ex 42 2')
-    res,D=lp_solve(c,A,b)
-    print(res)
-    print(D)
-    print()
+    # # Solve Exmaple slide 42 lec 2 using lp_solve
+    # c = np.array([1,-1,1])
+    # A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
+    # b = np.array([-5,4,-1])
+    # print('lp_solve Ex 42 2')
+    # res,D=lp_solve(c,A,b)
+    # print(res)
+    # print(D)
+    # print()
 
 if __name__ == "__main__":
     run_examples()
