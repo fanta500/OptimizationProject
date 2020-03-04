@@ -191,9 +191,11 @@ class Dictionary:
             a = -a
         xEntering = self.N[k]
         xLeaving = self.B[l]
-        #print("Entering var is", xEntering)
-        #print("Leaving var is", xLeaving)
-        #print("The dictionary is", self)
+        # print("The dictionary is")
+        # print(self)
+        # print("Entering var is", xEntering)
+        # print("Leaving var is", xLeaving)
+        
         # Solve xLeaving equation for xEntering
         row = self.C[l+1] #row of leaving var
         row = row/a #div all coefs by a
@@ -208,12 +210,14 @@ class Dictionary:
                 #enteringCoef = float(Fraction(enteringCoef).limit_denominator()) # This breaks Fraction. Tests still pass without.
                 self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
+            # print("The dictionary is")
+            # print(self)
                 
         # Update N
         self.N[k] = xLeaving
         # Update B
         self.B[l] = xEntering
-
+        
 
 class LPResult(Enum):
     OPTIMAL = 1
@@ -243,7 +247,8 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0 (largestCoef <= eps ??)
+    if largestCoef <= -eps: #if the largest coef is smaller than -eps, return optimal
+        #print("Largest coef is smaller than -eps, return None, None")
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
@@ -261,7 +266,7 @@ def bland(D,eps):
             BAarr[i, 1] = Fraction(0,1)
             BAarr[i, 0] = Fraction(1,1)
         elif BAarr[i, 0] == Fraction(0,1):
-            signOf_a = np.sign(BAarr[i, 1])
+            signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
             BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max)
             BAarr[i, 0] = Fraction(1,1)
 
