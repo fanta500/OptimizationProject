@@ -180,35 +180,34 @@ class Dictionary:
             return self.C[0, 0]
 
     def pivot(self, k, l):
-        print("The coeffecients are", self.C)
-        print("Entering is", self.N[k])
-        print("Leaving is", self.B[l])
-        a = self.C[l+1, k+1]
-        h, w = self.C.shape
+        # print("The coeffecients are", self.C)
+        # print("Entering is", self.N[k])
+        # print("Leaving is", self.B[l])
+        # a = self.C[l+1, k+1]
+        # h, w = self.C.shape
 
-        newDict = np.zeros((h, w), dtype = self.dtype)
+        # newDict = np.zeros((h, w), dtype = self.dtype)
 
-        for i in range(h):
-            for j in range(w):
-                if i == l+1 and j == k+1:
-                    newDict[i, j] = Fraction(1/self.C[i, j]).limit_denominator()
-                elif j == k+1:
-                    newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
-                elif i == l+1:
-                    newDict[i, j] = Fraction(-self.C[i, j] / a).limit_denominator()
-                else:
-                    newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
+        # for i in range(h):
+        #     for j in range(w):
+        #         if i == l+1 and j == k+1:
+        #             newDict[i, j] = Fraction(1/self.C[i, j]).limit_denominator()
+        #         elif j == k+1:
+        #             newDict[i, j] = Fraction(self.C[i, j] / a).limit_denominator()
+        #         elif i == l+1:
+        #             newDict[i, j] = Fraction(-self.C[i, j] / a).limit_denominator()
+        #         else:
+        #             newDict[i, j] = Fraction(self.C[i, j] - ((self.C[i, k+1]*self.C[l+1, j]) / a)).limit_denominator()
 
-        self.C = newDict
+        # self.C = newDict
 
-        temp = self.B[l]
-        self.B[l] = self.N[k]
-        self.N[k] = temp
-
+        # temp = self.B[l]
+        # self.B[l] = self.N[k]
+        # self.N[k] = temp
 
         '''
             DO NOT TOUCH THE NEGATIONS. THEY WORK BECAUSE OF WE DON'T KNOW
-            
+        '''    
         # Pivot Dictionary with N[k] entering and B[l] leaving
         # Performs integer pivoting if self.dtype==int
         # save pivot coefficient
@@ -243,7 +242,7 @@ class Dictionary:
         self.N[k] = xLeaving
         # Update B
         self.B[l] = xEntering
-        '''
+        
 
 class LPResult(Enum):
     OPTIMAL = 1
@@ -298,13 +297,10 @@ def bland(D,eps):
             BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
-    ratios = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))
-    print(ratios)
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
-    print(highestRatio)
     indexInB = None
     for i in range(len(BAarr)):
-        if highestRatio == np.divide(BAarr[i, 1], BAarr[i, 0]):
+        if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
             indexInB = i  
     l = indexInB
 
@@ -441,7 +437,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    print(D)
+    #print(D)
     while True:
         k, l = pivotrule(D)
 
