@@ -204,8 +204,8 @@ class Dictionary:
             if i == l+1: #skip the row we already modified
                 continue
             else:
-                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
-                #enteringCoef = float(Fraction(enteringCoef).limit_denominator())
+                enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation) 
+                #enteringCoef = float(Fraction(enteringCoef).limit_denominator()) # This breaks Fraction. Tests still pass without.
                 self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
                 
@@ -221,7 +221,7 @@ class LPResult(Enum):
     UNBOUNDED = 3
 
 def treat_as_zero(x, eps):
-    if -eps <= x <= eps:
+    if -eps <= x and x <= eps:
         return True
     else:
         return False
@@ -243,9 +243,7 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    # if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0
-    #     return None, None
-    if treat_as_zero(largestCoef, eps): #respect that infenitesimaly small values treated as 0
+    if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0 (largestCoef <= eps ??)
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
@@ -254,18 +252,18 @@ def bland(D,eps):
     BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn)) #glue the b values with the a values of the entering var
     for i in range(len(BAarr)):
         #respect epsilon again here
-        if (-eps <= BAarr[i, 0] <= eps):
-            BAarr[i, 0] = Fraction(0.0)
-        if (-eps <= BAarr[i, 1] <= eps):
-            BAarr[i, 1] = Fraction(0.0)
+        if (treat_as_zero(BAarr[i, 0], eps)):
+            BAarr[i, 0] = Fraction(0,1)
+        if (treat_as_zero(BAarr[i, 1], eps)):
+            BAarr[i, 1] = Fraction(0,1)
         #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0.0) and (BAarr[i, 1] == Fraction(0.0))):
-            BAarr[i, 1] = Fraction(0.0)
-            BAarr[i, 0] = Fraction(1.0)
-        elif BAarr[i, 0] == Fraction(0.0):
+        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))):
+            BAarr[i, 1] = Fraction(0,1)
+            BAarr[i, 0] = Fraction(1,1)
+        elif BAarr[i, 0] == Fraction(0,1):
             signOf_a = np.sign(BAarr[i, 1])
             BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max)
-            BAarr[i, 0] = Fraction(1.0)
+            BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
@@ -316,6 +314,40 @@ def largest_increase(D,eps):
     k=l=None
     # TODO
     return k,l
+
+def is_dictionary_feasible(D, eps):
+    # Dict. is feasible if all b's are nonnegative. Ie C[i,o] >= 0 (with eps).
+    for i in range(len(D.B)):
+        if D.C[i+1, 0] < -eps:
+            return False
+    return True
+
+def get_x0_index(D):
+    # The index of x0, ie the value in D.N and D.B that corresponds to x0
+    _, w = D.C.shape
+    x0_index = w-1
+    return x0_index
+
+def aux_pivotrule(D):
+    # Choose pivot variables for first aux. dictionary pivot. 
+    # Select x0 as entering and leaving variable as the one with minimal (most negative) b. (Lecture 2, slide 40)
+    
+    # x0 seems to be located rightmost, but not specified for lp_solve so make sure
+    x0_index = get_x0_index(D) 
+    N_pos, = np.where(D.N == x0_index)[0]
+    k = N_pos
+
+    b_col = D.C[:,0] # value of objective function should be 0, so no need to remove
+    minimal_b = np.sort(b_col)[0] 
+    index_of_minimal = np.where(b_col == minimal_b)[0][0] # Is this also okay for floats?
+    l = index_of_minimal - 1
+
+    return k, l
+
+def is_x0_basic(D):
+    # Check if x0 is in basis
+    x0_index = get_x0_index(D)
+    return (x0_index in D.B)
 
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
