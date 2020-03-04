@@ -249,13 +249,14 @@ def bland(D,eps):
     largestCoef = np.sort(obj)[len(obj)-1]
     if -eps <= largestCoef <= eps:
         largestCoef = 0
-    if largestCoef <= -eps: #if the largest coef is smaller than -eps, return optimal
+    if largestCoef < -eps: #if the largest coef is smaller than -eps, return optimal
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
 
     enteringVarColumn = D.C[1:, k+1]
-    BAarr = np.column_stack((D.C[1:, 0], enteringVarColumn)) #glue the b values with the a values of the entering var
+    bValueColumn = D.C[1:, 0]
+    BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
     for i in range(len(BAarr)):
         #respect epsilon again here
         if (treat_as_zero(BAarr[i, 0], eps)):
