@@ -353,10 +353,10 @@ def largest_coefficient(D,eps):
             BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of a/b instead of lowest of b/a. Section 2.4 in Vanderbei
-    highestRatio = np.sort(np.divide(BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
     indexInB = None
     for i in range(len(BAarr)):
-        if highestRatio == np.divide(BAarr[i, 1], BAarr[i, 0]):
+        if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
             indexInB = i  
     l = indexInB
 
