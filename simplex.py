@@ -243,12 +243,12 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     try:
+        print(np.where(obj > eps))
         lowestIndexWithPosCoef = np.where(obj > eps)[0][0] #leftmost column with coef > 0
     except:
         return None, None
     k = lowestIndexWithPosCoef
 
-    
     enteringVarColumn = D.C[1:, k+1]
     bValueColumn = D.C[1:, 0]
     BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
@@ -451,8 +451,10 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             D_aux.C = np.delete(D_aux.C, l+1, axis=1) #delete the column that is x0
             D_aux.N = np.delete(D_aux.N, l)
             lastAuxDictCoefs = D_aux.C
-        # for i in range(len(D_aux.C)):
-        #     if 
+        for i in range(len(D.N)):
+            for j in range(len(D_aux.B)):
+                if D.N[i] == D_aux.B[j]:
+                    D.C[0,:] += D_aux.C[j,:]
 
         #print("The original objective function is", c)
         print("The aux dict is")
@@ -462,7 +464,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     
     while True:
         k, l = pivotrule(D)
-
+        print(k)
         if k is None:
             return LPResult.OPTIMAL, D
 
