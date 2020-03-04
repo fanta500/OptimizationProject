@@ -415,28 +415,29 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     print("The original dict is")
     print(D)
     if is_dictionary_infeasible(D, eps):
+        #create aux dict. Using none makes it for us
         D_aux = Dictionary(None, A, b)
         print("The aux dict is")
         print(D_aux)
+        #make initial pivot of x0 and the most "infeasible" (largest negative value) basic var
         k_aux, l_aux = aux_pivotrule(D_aux)
-        c_aux = D_aux.C[0,:]
-        A_aux = D_aux.C[1:,1:]
-        b_aux = D_aux.C[1:,0]
         D_aux.pivot(k_aux, l_aux)
         print("The aux dict is")
         print(D_aux)
-        while True:
+        while True: 
+            #make pivots in the now feasible dict
             k_aux, l_aux = pivotrule(D_aux)
             print("Index of entering is", k_aux, "and index of leaving is", l_aux)
-            if k_aux is None:
+            if k_aux is None: #if the entering var is none, then the aux dict is optimal
                 break
             D_aux.pivot(k_aux, l_aux)
             print("The aux dict is")
             print(D_aux)
         objValueAux = D_aux.C[0,0]
-        if objValueAux < -eps:
+        print("The value of the objective func is", objValueAux)
+        if objValueAux < -eps: #if the optimal aux dict has optimal solution less than 0, the original LP is infeasible
             return LPResult.INFEASIBLE, None  
-        if is_x0_basic(D_aux):
+        if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
             print("x0 is basic")
             x0_index = get_x0_index(D_aux) 
             B_pos, = np.where(D_aux.B == x0_index)[0]
