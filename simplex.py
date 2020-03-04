@@ -205,7 +205,7 @@ class Dictionary:
                 continue
             else:
                 enteringCoef = self.C[i, k+1] #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
-                enteringCoef = float(Fraction(enteringCoef).limit_denominator())
+                #enteringCoef = float(Fraction(enteringCoef).limit_denominator())
                 self.C[i] = self.C[i] + enteringCoef*row #all coefs except leaving var are set correctly
                 self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
                 
@@ -219,6 +219,12 @@ class LPResult(Enum):
     OPTIMAL = 1
     INFEASIBLE = 2
     UNBOUNDED = 3
+
+def treat_as_zero(x, eps):
+    if -eps <= x <= eps:
+        return True
+    else:
+        return False
 
 def bland(D,eps):
     # Assumes a feasible dictionary D and finds entering and leaving
@@ -237,7 +243,9 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0
+    # if largestCoef <= -eps <= 0 <= eps: #respect that infenitesimaly small values treated as 0
+    #     return None, None
+    if treat_as_zero(largestCoef, eps): #respect that infenitesimaly small values treated as 0
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN

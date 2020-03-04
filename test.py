@@ -30,7 +30,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp(random.randrange(1,10), random.randrange(1,10))
+            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
             self.A = A
             self.b = b
