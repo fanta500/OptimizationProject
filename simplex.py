@@ -247,8 +247,9 @@ def bland(D,eps):
 
     obj = D.C[0, 1:] #this selects the first row and all columns except the first one
     largestCoef = np.sort(obj)[len(obj)-1]
+    if -eps <= largestCoef <= eps:
+        largestCoef = 0
     if largestCoef <= -eps: #if the largest coef is smaller than -eps, return optimal
-        #print("Largest coef is smaller than -eps, return None, None")
         return None, None
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
@@ -262,12 +263,12 @@ def bland(D,eps):
         if (treat_as_zero(BAarr[i, 1], eps)):
             BAarr[i, 1] = Fraction(0,1)
         #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))):
-            BAarr[i, 1] = Fraction(0,1)
-            BAarr[i, 0] = Fraction(1,1)
+        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case
+            BAarr[i, 1] = Fraction(0,1) #set a to be 0
+            BAarr[i, 0] = Fraction(1,1) #set b to be 1. Ends up being -0/1 which is 0
         elif BAarr[i, 0] == Fraction(0,1):
             signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
-            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max)
+            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max).limit_denominator()
             BAarr[i, 0] = Fraction(1,1)
 
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
@@ -321,7 +322,7 @@ def largest_increase(D,eps):
     return k,l
 
 def is_dictionary_feasible(D, eps):
-    # Dict. is feasible if all b's are nonnegative. Ie C[i,o] >= 0 (with eps).
+    # Dict. is feasible if all b's are nonnegative. Ie C[i,0] >= 0 (with eps).
     for i in range(len(D.B)):
         if D.C[i+1, 0] < -eps:
             return False
