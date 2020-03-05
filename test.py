@@ -27,7 +27,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -84,7 +84,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -142,7 +142,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -200,7 +200,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -258,7 +258,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -316,7 +316,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
