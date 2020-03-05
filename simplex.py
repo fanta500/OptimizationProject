@@ -46,6 +46,7 @@ def exercise2_6(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[1,2]]),np.ar
 # b = -3, -1, 2
 def exercise2_7(): return np.array([1,3]),np.array([[-1,-1],[-1,1],[-1,2]]),np.array([-3,-1,2])
 def random_lp(n,m,sigma=10): return np.round(sigma*np.random.randn(n)), np.round(sigma*np.random.randn(m,n)), np.round(sigma*np.abs(np.random.randn(m)))
+def random_lp_neg_b(n,m,sigma=10): return np.round(sigma*np.random.randn(n)), np.round(sigma*np.random.randn(m,n)), np.round(sigma*np.random.randn(m))
 
 
 class Dictionary:
@@ -438,8 +439,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    print("The original dict is")
-    print(D)
+    # print("The original dict is")
+    # print(D)
     if is_dictionary_infeasible(D, eps):
         #create aux dict. Using none makes it for us
         D_aux = Dictionary(None, A, b)
@@ -466,36 +467,34 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         #print("The aux dict is")
         #print(D_aux) 
         if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
-            print("x0 is basic")
+            # print("x0 is basic")
             x0_index = get_x0_index(D_aux) 
             B_pos, = np.where(D_aux.B == x0_index)[0]
             l = B_pos
             D_aux.pivot(len(D_aux.C[0])-2, l)
             D_aux.C = np.delete(D_aux.C, l+1, axis=1)
             D_aux.N = np.delete(D_aux.N, l)
-            lastAuxDictCoefs = D_aux.C
         else: #if x0 is not in the basis, remove it
             x0_index = get_x0_index(D_aux) 
             N_pos, = np.where(D_aux.N == x0_index)[0]
             l = N_pos
             D_aux.C = np.delete(D_aux.C, l+1, axis=1) #delete the column that is x0
             D_aux.N = np.delete(D_aux.N, l)
-            lastAuxDictCoefs = D_aux.C
-        for i in range(len(D.N)):
-            for j in range(len(D_aux.B)):
-                if D.N[i] == D_aux.B[j]:
-                    D.C[0,:] += D_aux.C[j,:]
+        # for i in range(len(D.N)):
+        #     for j in range(len(D_aux.B)):
+        #         if D.N[i] == D_aux.B[j]:
+        #             D.C[0,:] += D_aux.C[j,:]
 
         #print("The original objective function is", c)
-        print("The aux dict is")
-        print(D_aux)  
+        # print("The aux dict is")
+        # print(D_aux)  
 
-    D = express_objective(D, D_aux)
+        D = express_objective(D, D_aux)
     #return None, None
     
     while True:
         k, l = pivotrule(D)
-        print(k)
+        # print(k)
         if k is None:
             return LPResult.OPTIMAL, D
 

@@ -5,8 +5,8 @@ import time
 import scipy.optimize as opt
 from fractions import Fraction
 
-from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, treat_as_zero, is_dictionary_infeasible, is_x0_basic
-from simplex import aux_pivotrule
+from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, random_lp_neg_b
+from simplex import aux_pivotrule, treat_as_zero, is_dictionary_infeasible, is_x0_basic
 
 def compareRes(ourRes, linprogRes):
     if (ourRes == LPResult.OPTIMAL and linprogRes == 0):
@@ -15,9 +15,13 @@ def compareRes(ourRes, linprogRes):
         return True
     if (ourRes == LPResult.UNBOUNDED and linprogRes == 3):
         return True
+    else:
+        print("Our res is:", ourRes)
+        print("Linprog's res is:", linprogRes)
+        return False
 
 class TestRandomLP(unittest.TestCase):
-    def test_solve(self):
+    def test_solve_fraction_pos_b(self):
         totalTimeOur = 0
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
@@ -28,9 +32,6 @@ class TestRandomLP(unittest.TestCase):
             self.c = c
             self.A = A
             self.b = b
-            # print(c)
-            # print(A)
-            # print(b)
             ################
             startTimeOur = time.time()
             res, _ = lp_solve(self.c, self.A, self.b)
@@ -45,26 +46,200 @@ class TestRandomLP(unittest.TestCase):
                 linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
             except:
                 infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
                 continue
-            endTimeLinprog = time.time()
+
             if (linprogRes.status == 2):
                 infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
                 continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
-            # print("The initial problem is")
-            # print(Dictionary(self.c, self.A, self.b))
-            # print("Linprog returns" ,linprogRes.status)
-            # print("Our solution returns", res)
-            # print("problem number", i+1, "done.")
+
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
+        print("==== THIS TEST IS FOR FRACTIONS WITH POSITIVE B VALUES ====")
         print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
         print("We found a total of", infesibleCountOur, "infeasible solutions")
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
         
+    def test_solve_npfloat64_pos_b(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
+            self.c = c
+            self.A = A
+            self.b = b
+            ################
+            startTimeOur = time.time()
+            res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64)
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
+
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            self.assertEqual(compareRes(res, linprogRes.status), True)
+
+        print("==== THIS TEST IS FOR np.float64 WITH POSITIVE B VALUES ====")
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
+
+    def test_solve_fraction_neg_b(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
+            self.c = c
+            self.A = A
+            self.b = b
+            ################
+            startTimeOur = time.time()
+            res, _ = lp_solve(self.c, self.A, self.b)
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
+
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            self.assertEqual(compareRes(res, linprogRes.status), True)
+
+        print("==== THIS TEST IS FOR FRACTIONS WITH POTENTIALLY NEGATIVE B VALUES ====")
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
+        
+    def test_solve_npfloat64_neg_b(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
+            self.c = c
+            self.A = A
+            self.b = b
+            ################
+            startTimeOur = time.time()
+            res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64)
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
+
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            self.assertEqual(compareRes(res, linprogRes.status), True)
+
+        print("==== THIS TEST IS FOR np.float64 WITH POTENTIALLY NEGATIVE B VALUES ====")
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
 
     def test_zero(self):
         # Test of eps comparison using Fraction"
