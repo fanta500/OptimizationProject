@@ -7,6 +7,7 @@ from fractions import Fraction
 
 from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, random_lp_neg_b
 from simplex import aux_pivotrule, treat_as_zero, is_dictionary_infeasible, is_x0_basic
+from simplex import largest_coefficient
 
 def compareRes(ourRes, linprogRes):
     if (ourRes == LPResult.OPTIMAL and linprogRes == 0):
@@ -252,6 +253,8 @@ class TestRandomLP(unittest.TestCase):
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
 
+    
+
     '''
     def test_accum(self):
         print("i, our, linprog")
@@ -286,8 +289,53 @@ class TestRandomLP(unittest.TestCase):
                 totalTimeLinprog += elapsedTimeLinprog
             
             print(i,",",totalTimeOur,",",totalTimeLinprog)
+        '''
 
-    '''
+    def test_accum_compare(self):
+        num_problems = 50
+        print("Solving", num_problems, "for each")
+        print("size, our bland's, our largest coef, linprog")
+        for i in range(1,num_problems):
+            totalTimeOurBland = 0
+            totalTimeOurLC = 0
+            totalTimeLinprog = 0
+            for j in range(50):
+                ###############
+                c, A, b = random_lp_neg_b(i, i)
+                self.c = c
+                self.A = A
+                self.b = b
+                ################
+                startTimeOur = time.time()
+                res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64)
+                endTimeOur = time.time()
+                elapsedTimeOur = endTimeOur - startTimeOur
+                totalTimeOurBland += elapsedTimeOur
+
+
+                startTimeOur = time.time()
+                res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64,pivotrule=lambda D: largest_coefficient(D,eps=0))
+                endTimeOur = time.time()
+                elapsedTimeOurLC = endTimeOur - startTimeOur
+                totalTimeOurLC += elapsedTimeOur
+
+                
+                startTimeLinprog = time.time()
+                try:
+                    linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+                except:
+                    endTimeLinprog = time.time()
+                    elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                    totalTimeLinprog += elapsedTimeLinprog
+                    continue
+
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+            
+            print(i,",",totalTimeOurBland,",",totalTimeOurLC, "," ,totalTimeLinprog)
+
+
 
     def test_zero(self):
         # Test of eps comparison using Fraction"
