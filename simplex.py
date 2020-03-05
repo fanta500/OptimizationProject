@@ -526,9 +526,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             for i in range(1, len(D_aux.C[l+1])):
                 if not (-eps <= D_aux.C[l+1, i] <= eps):
                     columnWithoutZero = i-1
-            print(columnWithoutZero)
-            print(D_aux.C)
-            #D_aux.pivot(len(D_aux.C[0])-2, l) #-2 is because we need to remove the consideration of objective value and column for aux var
+            
             D_aux.pivot(columnWithoutZero, l)
             D_aux.C = np.delete(D_aux.C, columnWithoutZero+1, axis=1)
             D_aux.N = np.delete(D_aux.N, columnWithoutZero)
