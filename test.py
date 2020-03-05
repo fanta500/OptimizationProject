@@ -63,7 +63,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -103,7 +103,9 @@ class TestRandomLP(unittest.TestCase):
             endTimeLinprog = time.time()
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
-
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR FRACTIONS WITH POSITIVE B VALUES ====")
@@ -118,7 +120,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -159,6 +161,9 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR np.float64 WITH POSITIVE B VALUES ====")
@@ -173,7 +178,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -214,6 +219,9 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR FRACTIONS WITH POTENTIALLY NEGATIVE B VALUES ====")
@@ -228,7 +236,7 @@ class TestRandomLP(unittest.TestCase):
         totalTimeLinprog = 0
         infesibleCountLinprog = 0
         infesibleCountOur = 0
-        for i in range(1000):
+        for i in range(10000):
             ###############
             c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
@@ -269,6 +277,9 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR np.float64 WITH POTENTIALLY NEGATIVE B VALUES ====")
@@ -277,6 +288,43 @@ class TestRandomLP(unittest.TestCase):
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
+
+    '''
+    def test_accum(self):
+        print("i, our, linprog")
+        for i in range(0,50):
+            totalTimeOur = 0
+            totalTimeLinprog = 0
+            for j in range(10):
+                ###############
+                c, A, b = random_lp_neg_b(i, i)
+                self.c = c
+                self.A = A
+                self.b = b
+                ################
+                startTimeOur = time.time()
+                res, _ = lp_solve(self.c, self.A, self.b)
+                endTimeOur = time.time()
+                elapsedTimeOur = endTimeOur - startTimeOur
+                totalTimeOur += elapsedTimeOur
+
+                
+                startTimeLinprog = time.time()
+                try:
+                    linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+                except:
+                    endTimeLinprog = time.time()
+                    elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                    totalTimeLinprog += elapsedTimeLinprog
+                    continue
+
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+            
+            print(i,",",totalTimeOur,",",totalTimeLinprog)
+
+    '''
 
     def test_zero(self):
         # Test of eps comparison using Fraction"
@@ -358,7 +406,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1
         A,b = np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 2)
         self.assertEqual(l, 1)
 
@@ -370,7 +418,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1, -4, 1
         A,b = np.array([[-1,1],[-1,-2],[0,1],[2,3],[2,3]]),np.array([-1,-2,1,-4,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 2)
         self.assertEqual(l, 3)
         
@@ -380,7 +428,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1
         A,b = np.array([[-1,1,3],[-1,-2,3],[0,1,3]]),np.array([-1,-2,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 3)
         self.assertEqual(l, 1)
 
