@@ -389,31 +389,28 @@ def is_x0_basic(D):
 
 
 def express_objective(D_origin, D_aux):
+    '''
+        Express the objective function of the original LP in terms of the 
+        non-basic variables of the aux dictionary. 
+    '''
     _, width = D_aux.C.shape
     D_aux.C[0] = np.zeros(width, D_origin.dtype) # ensure all coefs in aux obj are 0
-    obj_origin = D_origin.C[0]
+    obj_origin = D_origin.C[0] # The original objective value
 
     for i in range(1, width): # variables 1 to n are the original variables
         # i is the index of the variable
-        origin_factor = obj_origin[i]
-        #print("The factor for x", i, " is ", origin_factor)
+        origin_factor = obj_origin[i] # The coefficient for this variable in the original objective function
 
-        aux_present = np.where(D_aux.B == i)[0]
-        #print("The search for the variable in aux gave: ", aux_present)
-        should_obj_change = (len(aux_present) == 1)
-        #print("Should obj change for x", i, ": ", should_obj_change)
-        if should_obj_change:
+        aux_present = np.where(D_aux.B == i)[0] 
+        should_obj_change = (len(aux_present) == 1) # Is variable basic in aux
+        if should_obj_change: # The variable is basic in the aux dictionary, convert using row from aux
             nonbase_row_index = aux_present[0] + 1
-            nonbase_row = D_aux.C[nonbase_row_index]
-            #print("The additive row for x", i, "is:", origin_factor * nonbase_row)
-            D_aux.C[0] = D_aux.C[0] + origin_factor * nonbase_row
-        else:
+            nonbase_row = D_aux.C[nonbase_row_index] # row from aux that describes variable
+            D_aux.C[0] = D_aux.C[0] + origin_factor * nonbase_row # add varible row to new objective function
+        else: # Variable is non-basic, so just increase in new objective function
             new_index = np.where(D_aux.N == i)[0][0] + 1
-            #print("Adding", origin_factor, "to ", D_aux.C[0,new_index])
             D_aux.C[0, new_index] += origin_factor
-        #print("The dict is now\n", D_aux)
     
-    #print("The new feasible dict is\n", D_aux)
     return D_aux
 
 def pivot_to_result(D, pivotrule):
