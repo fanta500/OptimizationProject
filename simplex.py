@@ -282,7 +282,7 @@ def bland(D,eps):
     # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei 
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
     if highestRatio <= eps:
-        return k, None
+        return k, None #LP is unbounded
     indexInB = None
     for i in range(len(BAarr)):
         if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
@@ -321,27 +321,13 @@ def largest_coefficient(D,eps):
 
     if checkUnbounded(D, k, eps):
         return k, None
-
-    enteringVarColumn = D.C[1:, k+1]
-    bValueColumn = D.C[1:, 0]
-    BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
-    for i in range(len(BAarr)):
-        #respect epsilon again here
-        if (treat_as_zero(BAarr[i, 0], eps)):
-            BAarr[i, 0] = Fraction(0,1)
-        if (treat_as_zero(BAarr[i, 1], eps)):
-            BAarr[i, 1] = Fraction(0,1)
-        #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case
-            BAarr[i, 1] = Fraction(0,1) #set a to be 0
-            BAarr[i, 0] = Fraction(1,1) #set b to be 1. Ends up being -0/1 which is 0
-        elif BAarr[i, 0] == Fraction(0,1):
-            signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
-            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max).limit_denominator()
-            BAarr[i, 0] = Fraction(1,1)
+        
+    BAarr = compute_when_a_b_is_zero(D, eps, k)
 
     # apparently we should use highest ratio of a/b instead of lowest of b/a. Section 2.4 in Vanderbei
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    if highestRatio <= eps:
+        return k, None #LP is unbounded
     indexInB = None
     for i in range(len(BAarr)):
         if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
@@ -430,9 +416,9 @@ def express_objective(D_origin, D_aux):
     #print("The new feasible dict is\n", D_aux)
     return D_aux
 
-def pivot_to_result(D, pivotrule=lambda D: bland(D,eps=0)):
+def pivot_to_result(D, pivotrule):
     current_pivotrule = pivotrule
-    allowed_degenerate = 1
+    allowed_degenerate = 10
     num_degenerate_pivots = 0
     old_objective_value = D.C[0,0]
     while True:
@@ -449,12 +435,14 @@ def pivot_to_result(D, pivotrule=lambda D: bland(D,eps=0)):
         objective_value = D.C[0,0]
         if objective_value <= old_objective_value:
             num_degenerate_pivots +=1
-            print("Degenerate pivot performed, count is now", num_degenerate_pivots)
+            #print("Degenerate pivot performed, count is now", num_degenerate_pivots)
         else:
             num_degenerate_pivots = 0
+            current_pivotrule = pivotrule
+            #print("Switched pivot rule back to", pivotrule)
         
         if num_degenerate_pivots > allowed_degenerate:
-            print("Switched to bland's")
+            #print("Switched to bland's")
             current_pivotrule = lambda D: bland(D,eps=0)
 
 
@@ -751,3 +739,4 @@ def run_examples_pv_largest_coef():
 
 if __name__ == "__main__":
     run_examples()
+    run_examples_pv_largest_coef()
