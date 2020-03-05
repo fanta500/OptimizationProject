@@ -22,6 +22,7 @@ def compareRes(ourRes, linprogRes):
         return False
 
 class TestRandomLP(unittest.TestCase):
+    '''
     def test_solve_fraction_pos_b(self):
         totalTimeOur = 0
         totalTimeLinprog = 0
@@ -368,6 +369,9 @@ class TestRandomLP(unittest.TestCase):
         print("Our solution solved the LPs in", totalTimeOur, "seconds.")
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
+
+    '''
+
     '''
     def test_accum(self):
         print("i, our, linprog")
@@ -422,15 +426,15 @@ class TestRandomLP(unittest.TestCase):
                 startTimeOur = time.time()
                 res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64)
                 endTimeOur = time.time()
-                elapsedTimeOur = endTimeOur - startTimeOur
-                totalTimeOurBland += elapsedTimeOur
+                elapsedTimeOurBland = endTimeOur - startTimeOur
+                totalTimeOurBland += elapsedTimeOurBland
 
 
                 startTimeOur = time.time()
                 res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64,pivotrule=lambda D: largest_coefficient(D,eps=0))
                 endTimeOur = time.time()
                 elapsedTimeOurLC = endTimeOur - startTimeOur
-                totalTimeOurLC += elapsedTimeOur
+                totalTimeOurLC += elapsedTimeOurLC
 
                 
                 startTimeLinprog = time.time()
