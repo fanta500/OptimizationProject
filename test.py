@@ -6,7 +6,7 @@ import scipy.optimize as opt
 from fractions import Fraction
 
 from simplex import lp_solve, Dictionary, bland, LPResult, random_lp, random_lp_neg_b
-from simplex import aux_pivotrule, treat_as_zero, is_dictionary_infeasible, is_x0_basic
+from simplex import aux_pivotrule, is_dictionary_infeasible, is_x0_basic
 from simplex import largest_coefficient
 
 def compareRes(ourRes, linprogRes):
@@ -415,33 +415,6 @@ class TestRandomLP(unittest.TestCase):
                 totalTimeLinprog += elapsedTimeLinprog
             
             print(i,",",totalTimeOurBland,",",totalTimeOurLC, "," ,totalTimeLinprog)
-
-
-
-    def test_zero(self):
-        # Test of eps comparison using Fraction"
-        eps = Fraction(1,2)
-        x0 = Fraction(6, 10)
-        x1 = Fraction(4,10)
-        x2 = Fraction(-4,10)
-        x3 = Fraction(-6,10)
-
-        self.assertFalse(treat_as_zero(x0, eps))
-        self.assertFalse(treat_as_zero(x3, eps))
-        self.assertTrue(treat_as_zero(x1,eps))
-        self.assertTrue(treat_as_zero(x2,eps))
-
-        # Test of eps comparison using np.float64
-        eps = np.float64(Fraction(1,2))
-        x0 = np.float64(Fraction(6, 10))
-        x1 = np.float64(Fraction(4,10))
-        x2 = np.float64(Fraction(-4,10))
-        x3 = np.float64(Fraction(-6,10))
-
-        self.assertFalse(treat_as_zero(x0, eps))
-        self.assertFalse(treat_as_zero(x3, eps))
-        self.assertTrue(treat_as_zero(x1,eps))
-        self.assertTrue(treat_as_zero(x2,eps))
 
     def test_feasible_check(self):
         # c = 5,  4, 3
