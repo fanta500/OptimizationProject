@@ -490,12 +490,17 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             x0_index = get_x0_index(D_aux) 
             B_pos = np.where(D_aux.B == x0_index)[0][0]
             l = B_pos
-            k_ph = np.where(D_aux.C[l+1,1:] is not 0)
-            print(k_ph)
+
+            columnWithoutZero = None
+            for i in range(1, len(D_aux.C[l+1])):
+                if not (-eps <= D_aux.C[l+1, i] <= eps):
+                    columnWithoutZero = i-1
+            print(columnWithoutZero)
             print(D_aux.C)
-            D_aux.pivot(len(D_aux.C[0])-2, l) #-2 is because we need to remove the consideration of objective value and column for aux var
-            D_aux.C = np.delete(D_aux.C, l+1, axis=1)
-            D_aux.N = np.delete(D_aux.N, l)
+            #D_aux.pivot(len(D_aux.C[0])-2, l) #-2 is because we need to remove the consideration of objective value and column for aux var
+            D_aux.pivot(columnWithoutZero, l)
+            D_aux.C = np.delete(D_aux.C, columnWithoutZero+1, axis=1)
+            D_aux.N = np.delete(D_aux.N, columnWithoutZero)
         else: #if x0 is not in the basis, remove it
             x0_index = get_x0_index(D_aux) 
             N_pos = np.where(D_aux.N == x0_index)[0][0]
