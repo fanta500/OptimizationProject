@@ -188,44 +188,29 @@ class Dictionary:
 
         xEntering = self.N[k]
         xLeaving = self.B[l]
-        # print("The dictionary is")
-        # print(self)
-        # print("Entering var is", k)
-        # print("Leaving var is", l)
-        
+
         # Solve xLeaving equation for xEntering
-        row = -np.copy(self.C[l+1]) #row of leaving var
+        row = -np.copy(self.C[l+1]) #row of leaving var negated because of the nature of the A matrix
         row = np.divide(row, a) #div all coefs by a
-        row[k+1] = np.divide(1, a) #set the leaving var to -1/a
-        #print("the row of the leaving var is", row)
-        self.C[l+1] = row
-        # Update C
+        row[k+1] = np.divide(1, a) #set the var to 1/a
+        self.C[l+1] = row #Update C
+        
         for i in range(len(self.C)):
             if i == l+1: #skip the row we already modified
                 continue
             else:
                 enteringCoef = np.copy(self.C[i, k+1]) #coefficient of the entering var in the equation for all other equations (NOT in leaving var equation)
                 self.C[i] = self.C[i] + enteringCoef * row #all coefs except leaving var are set correctly
-                self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly
-            # print("The dictionary is")
-            # print(self)
-                
+                self.C[i, k+1] = enteringCoef * self.C[l+1, k+1] #sets the coefs for the leaving vars correctly   
         # Update N
         self.N[k] = xLeaving
         # Update B
         self.B[l] = xEntering
-        
 
 class LPResult(Enum):
     OPTIMAL = 1
     INFEASIBLE = 2
     UNBOUNDED = 3
-
-def treat_as_zero(x, eps):
-    if -eps <= x and x <= eps:
-        return True
-    else:
-        return False
 
 def compute_when_a_b_is_zero(D, eps, k):
     '''
@@ -236,11 +221,11 @@ def compute_when_a_b_is_zero(D, eps, k):
     bValueColumn = D.C[1:, 0]
     BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
     for i in range(len(BAarr)):
-        #respect epsilon again here
-        if (treat_as_zero(BAarr[i, 0], eps)):
+        #set entry to 0 if in range [-eps, eps]
+        if -eps <= BAarr[i, 0] <= eps:
             BAarr[i, 0] = 0
-        if (treat_as_zero(BAarr[i, 1], eps)):
-            BAarr[i, 1] = 0
+        if -eps <= BAarr[i, 1] <= eps:
+            BAarr[i, 1] = 0    
         #makes sure that the correct corner cases are treated properly
         if (BAarr[i, 0] == 0 and (BAarr[i, 1] == 0)): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case. Report unbounded
             BAarr[i, 1] = 0 #set a to be 0
@@ -266,12 +251,12 @@ def bland(D,eps):
        
     k = l = None
 
-    obj = D.C[0, 1:] #this selects the first row and all columns except the first one
-    try:
-        #print(np.where(obj > eps))
+    obj = D.C[0, 1:] #this selects the first row and all columns except the first column
+    try: #try catch is used because you might have a dict where no coef is > 0, and then the LP is optimal, thus return None, None
         lowestIndexWithPosCoef = np.where(obj > eps)[0][0] #leftmost column with coef > 0
-    except:
+    except: 
         return None, None
+
     k = lowestIndexWithPosCoef
 
     if checkUnbounded(D, k, eps):
@@ -279,12 +264,12 @@ def bland(D,eps):
 
     BAarr = compute_when_a_b_is_zero(D, eps, k) 
 
-    # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei 
+    #Use max(-a/b), Section 2.4 in Vanderbei
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
     if highestRatio <= eps:
         return k, None #LP is unbounded
     indexInB = None
-    for i in range(len(BAarr)):
+    for i in range(len(BAarr)): #find the index where the highest ratio was found
         if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
             indexInB = i  
     l = indexInB
@@ -292,6 +277,9 @@ def bland(D,eps):
     return k,l
 
 def checkUnbounded(D, k, eps):
+    '''
+        Returns true if the problem is unbounded
+    '''
     for i in range(len(D.B)):
         if D.C[i+1, k+1] < eps:
             return False
@@ -312,11 +300,11 @@ def largest_coefficient(D,eps):
     
     k = l = None
 
-    obj = D.C[0, 1:] #this selects the first row and all columns except the first one
-    largestCoef = np.sort(obj)[len(obj)-1]
+    obj = D.C[0, 1:] #this selects the first row and all columns except the first column
+    largestCoef = np.sort(obj)[len(obj)-1] 
     if largestCoef <= eps: #if the largest coef is smaller or equal to eps, return optimal
         return None, None
-    indexInN = np.where(obj == largestCoef)[0][0]
+    indexInN = np.where(obj == largestCoef)[0][0] #find the index where the largest coef was found
     k = indexInN
 
     if checkUnbounded(D, k, eps):
@@ -324,12 +312,12 @@ def largest_coefficient(D,eps):
         
     BAarr = compute_when_a_b_is_zero(D, eps, k)
 
-    # apparently we should use highest ratio of a/b instead of lowest of b/a. Section 2.4 in Vanderbei
+    #Use max(-a/b), Section 2.4 in Vanderbei
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
     if highestRatio <= eps:
         return k, None #LP is unbounded
     indexInB = None
-    for i in range(len(BAarr)):
+    for i in range(len(BAarr)): #find the index where the highest ratio was found
         if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
             indexInB = i  
     l = indexInB
@@ -354,7 +342,10 @@ def largest_increase(D,eps):
     return k,l
 
 def is_dictionary_infeasible(D, eps):
-    # Dict. is feasible if all b's are nonnegative. Ie C[i,0] >= 0 (with eps).
+    '''
+        Returns True if the dict. is infeasible
+        IE. any b is negative
+    '''
     for i in range(len(D.B)):
         if D.C[i+1, 0] < -eps:
             return True
@@ -371,14 +362,14 @@ def aux_pivotrule(D, eps):
     # Select x0 as entering and leaving variable as the one with minimal (most negative) b. (Lecture 2, slide 40)
     
     # x0 seems to be located rightmost, but not specified for lp_solve so make sure
-    x0_index = get_x0_index(D) 
-    N_pos = np.where(D.N == x0_index)[0][0]
+    x0_index = get_x0_index(D) #find the variable number of x0, will have number #of variables + 1
+    N_pos = np.where(D.N == x0_index)[0][0] #find which index this has in non-basis
     k = N_pos
 
     b_col = D.C[:,0] # value of objective function should be 0, so no need to remove
     minimal_b = np.sort(b_col)[0] 
-    index_of_minimal = np.where(b_col == minimal_b)[0][0] # Is this also okay for floats?
-    l = index_of_minimal - 1
+    index_of_minimal = np.where(b_col == minimal_b)[0][0] # find the index of the smallest b value
+    l = index_of_minimal - 1 # minus one because we don't remove the first row from the b column
 
     return k, l
 
@@ -386,7 +377,6 @@ def is_x0_basic(D):
     # Check if x0 is in basis
     x0_index = get_x0_index(D)
     return (x0_index in D.B)
-
 
 def express_objective(D_origin, D_aux):
     '''
@@ -414,12 +404,16 @@ def express_objective(D_origin, D_aux):
     return D_aux
 
 def pivot_to_result(D, pivotrule):
+    '''
+        This is a helper method to the lp_solve method.
+        The method continues to do pivots until some result is achieved.
+    '''
     current_pivotrule = pivotrule
-    allowed_degenerate = 10
-    num_degenerate_pivots = 0
+    allowed_degenerate = 10 #maximum number of consecutive degenerate pivots
+    num_degenerate_pivots = 0 #current number of consecutive degenerate pivots
     old_objective_value = D.C[0,0]
     while True:
-        k, l = current_pivotrule(D)
+        k, l = current_pivotrule(D) #find the variables to pivot on
 
         if k is None:
             return LPResult.OPTIMAL, D
@@ -430,18 +424,14 @@ def pivot_to_result(D, pivotrule):
         D.pivot(k, l)
 
         objective_value = D.C[0,0]
-        if objective_value <= old_objective_value:
+        if objective_value <= old_objective_value: # no improvement, thus degenerate pivot
             num_degenerate_pivots +=1
-            #print("Degenerate pivot performed, count is now", num_degenerate_pivots)
-        else:
+        else: # if a non-degenerate pivot is performed, revert to the original strategy
             num_degenerate_pivots = 0
             current_pivotrule = pivotrule
-            #print("Switched pivot rule back to", pivotrule)
-        
-        if num_degenerate_pivots > allowed_degenerate:
-            #print("Switched to bland's")
+        if num_degenerate_pivots > allowed_degenerate: # too many consecutive degenerate pivots, switch to bland's
             current_pivotrule = lambda D: bland(D,eps=0)
-
+        old_objective_value = D.C[0,0] #update the objective value
 
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
@@ -467,118 +457,89 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
     # LPResult.OPTIMAL,D, where D is an optimal dictionary.
 
     D = Dictionary(c, A, b)
-    
-    # print("The original dict is")
-    # print(D)
+
     if is_dictionary_infeasible(D, eps):
         #create aux dict. Using none makes it for us
         D_aux = Dictionary(None, A, b)
-        # print("The aux dict is")
-        # print(D_aux)
         #make initial pivot of x0 and the most "infeasible" (largest negative value) basic var
         k_aux, l_aux = aux_pivotrule(D_aux, eps)
         D_aux.pivot(k_aux, l_aux)
-        # print("The aux dict is")
-        # print(D_aux)
-        # while True: 
-        #     #make pivots in the now feasible dict
-        #     k_aux, l_aux = pivotrule(D_aux)
-        #     #print("Index of entering is", k_aux, "and index of leaving is", l_aux)
-        #     if k_aux is None: #if the entering var is none, then the aux dict is optimal
-        #         break
-        #     elif l_aux is None:
-        #         return LPResult.UNBOUNDED, None
-        #     D_aux.pivot(k_aux, l_aux)
-        #     # print("The aux dict is")
-        #     # print(D_aux)
-        aux_result, D_aux = pivot_to_result(D_aux, pivotrule)
-        if aux_result == LPResult.UNBOUNDED:
-            return LPResult.UNBOUNDED, None
-        objValueAux = D_aux.C[0,0]
 
-        # print("The value of the objective func is", objValueAux)
+        aux_result, D_aux = pivot_to_result(D_aux, pivotrule)
+        if aux_result == LPResult.UNBOUNDED: 
+            return LPResult.UNBOUNDED, None
+
+        objValueAux = D_aux.C[0,0]
         if objValueAux < -eps: #if the optimal aux dict has optimal solution less than 0, the original LP is infeasible
             return LPResult.INFEASIBLE, None  
-        # print("The aux dict is")
-        # print(D_aux) 
+
         if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
-            #print("x0 is basic")
-            x0_index = get_x0_index(D_aux) 
-            B_pos = np.where(D_aux.B == x0_index)[0][0]
+            x0_index = get_x0_index(D_aux) #find the variable number of x0, will have number #of variables + 1
+            B_pos = np.where(D_aux.B == x0_index)[0][0] #find which index this has in non-basis
             l = B_pos
 
             columnWithoutZero = None
-            for i in range(1, len(D_aux.C[l+1])):
+            for i in range(1, len(D_aux.C[l+1])): #finds the first column of A, row of leaving var (x0), where the coef is not 0. This is to avoid divison by 0
                 if not (-eps <= D_aux.C[l+1, i] <= eps):
                     columnWithoutZero = i-1
             
             D_aux.pivot(columnWithoutZero, l)
-            D_aux.C = np.delete(D_aux.C, columnWithoutZero+1, axis=1)
-            D_aux.N = np.delete(D_aux.N, columnWithoutZero)
+            D_aux.C = np.delete(D_aux.C, columnWithoutZero+1, axis=1) #delete the x0 column
+            D_aux.N = np.delete(D_aux.N, columnWithoutZero) #delete the x0 entry in N
         else: #if x0 is not in the basis, remove it
-            x0_index = get_x0_index(D_aux) 
-            N_pos = np.where(D_aux.N == x0_index)[0][0]
+            x0_index = get_x0_index(D_aux) #find the variable number of x0, will have number #of variables + 1
+            N_pos = np.where(D_aux.N == x0_index)[0][0] #find which index this has in basis
             l = N_pos
             D_aux.C = np.delete(D_aux.C, l+1, axis=1) #delete the column that is x0
             D_aux.N = np.delete(D_aux.N, l)
 
-        D = express_objective(D, D_aux)
-    
-    # while True:
-    #     k, l = pivotrule(D)
-    #     # print(k)
-    #     if k is None:
-    #         return LPResult.OPTIMAL, D
+        D = express_objective(D, D_aux) # configure the new objective function depending on the opriginal
 
-    #     if l is None:
-    #         return LPResult.UNBOUNDED, None 
-
-    #     D.pivot(k,l)
     return pivot_to_result(D, pivotrule)
   
 def run_examples():
-    # # Example 1
-    # c,A,b = example1()
-    # D=Dictionary(c,A,b)
-    # print('Example 1 with Fraction')
-    # print('Initial dictionary:')
-    # print(D)
-    # print('x1 is entering and x4 leaving:')
-    # D.pivot(0,0)
-    # print(D)
-    # print('x3 is entering and x6 leaving:')
-    # D.pivot(2,2)
-    # print(D)
-    # print()
+    # Example 1
+    c,A,b = example1()
+    D=Dictionary(c,A,b)
+    print('Example 1 with Fraction')
+    print('Initial dictionary:')
+    print(D)
+    print('x1 is entering and x4 leaving:')
+    D.pivot(0,0)
+    print(D)
+    print('x3 is entering and x6 leaving:')
+    D.pivot(2,2)
+    print(D)
+    print()
 
-    # D=Dictionary(c,A,b,np.float64)
-    # print('Example 1 with np.float64')
-    # print('Initial dictionary:')
-    # print(D)
-    # print('x1 is entering and x4 leaving:')
-    # D.pivot(0,0)
-    # print(D)
-    # print('x3 is entering and x6 leaving:')
-    # D.pivot(2,2)
-    # print(D)
-    # print()
+    D=Dictionary(c,A,b,np.float64)
+    print('Example 1 with np.float64')
+    print('Initial dictionary:')
+    print(D)
+    print('x1 is entering and x4 leaving:')
+    D.pivot(0,0)
+    print(D)
+    print('x3 is entering and x6 leaving:')
+    D.pivot(2,2)
+    print(D)
+    print()
 
-    # # Example 2
-    # c,A,b = example2()
-    # print('Example 2')
-    # print('Auxillary dictionary')
-    # D=Dictionary(None,A,b)
-    # print(D)
-    # print('x0 is entering and x4 leaving:')
-    # D.pivot(2,1)
-    # print(D)
-    # print('x2 is entering and x3 leaving:')
-    # D.pivot(1,0)
-    # print(D)
-    # print('x1 is entering and x0 leaving:')
-    # D.pivot(0,1)
-    # print(D)
-    # print()
+    # Example 2
+    c,A,b = example2()
+    print('Example 2')
+    print('Auxillary dictionary')
+    D=Dictionary(None,A,b)
+    print(D)
+    print('x0 is entering and x4 leaving:')
+    D.pivot(2,1)
+    print(D)
+    print('x2 is entering and x3 leaving:')
+    D.pivot(1,0)
+    print(D)
+    print('x1 is entering and x0 leaving:')
+    D.pivot(0,1)
+    print(D)
+    print()
 
     # Solve Example 1 using lp_solve
     c,A,b = example1()
@@ -620,41 +581,41 @@ def run_examples():
     print(D)
     print()
 
-    # # #Integer pivoting
-    # # c,A,b=example1()
-    # # D=Dictionary(c,A,b,int)
-    # # print('Example 1 with int')
-    # # print('Initial dictionary:')
-    # # print(D)
-    # # print('x1 is entering and x4 leaving:')
-    # # D.pivot(0,0)
-    # # print(D)
-    # # print('x3 is entering and x6 leaving:')
-    # # D.pivot(2,2)
-    # # print(D)
-    # # print()
+    #Integer pivoting
+    c,A,b=example1()
+    D=Dictionary(c,A,b,int)
+    print('Example 1 with int')
+    print('Initial dictionary:')
+    print(D)
+    print('x1 is entering and x4 leaving:')
+    D.pivot(0,0)
+    print(D)
+    print('x3 is entering and x6 leaving:')
+    D.pivot(2,2)
+    print(D)
+    print()
 
-    # # c,A,b = integer_pivoting_example()
-    # # D=Dictionary(c,A,b,int)
-    # # print('Integer pivoting example from lecture')
-    # # print('Initial dictionary:')
-    # # print(D)
-    # # print('x1 is entering and x3 leaving:')
-    # # D.pivot(0,0)
-    # # print(D)
-    # # print('x2 is entering and x4 leaving:')
-    # # D.pivot(1,1)
-    # # print(D)
+    c,A,b = integer_pivoting_example()
+    D=Dictionary(c,A,b,int)
+    print('Integer pivoting example from lecture')
+    print('Initial dictionary:')
+    print(D)
+    print('x1 is entering and x3 leaving:')
+    D.pivot(0,0)
+    print(D)
+    print('x2 is entering and x4 leaving:')
+    D.pivot(1,1)
+    print(D)
 
-    # # Solve Exmaple slide 42 lec 2 using lp_solve
-    # c = np.array([1,-1,1])
-    # A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
-    # b = np.array([-5,4,-1])
-    # print('lp_solve Ex 42 2')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exmaple slide 42 lec 2 using lp_solve
+    c = np.array([1,-1,1])
+    A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
+    b = np.array([-5,4,-1])
+    print('lp_solve Ex 42 2')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
     # Solve randomly generated problem
     c = np.array([-5,-9,16,8])
@@ -666,7 +627,6 @@ def run_examples():
     print(res)
     print(D)
     print()
-
 
 def run_examples_pv_largest_coef():
 
@@ -732,7 +692,6 @@ def run_examples_pv_largest_coef():
     print(res)
     print(D)
     print()
-
 
 if __name__ == "__main__":
     run_examples()
