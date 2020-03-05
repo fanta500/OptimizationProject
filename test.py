@@ -28,7 +28,7 @@ class TestRandomLP(unittest.TestCase):
         infesibleCountOur = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp(random.randrange(1,15), random.randrange(1,15))
+            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
             self.A = A
             self.b = b
@@ -85,7 +85,7 @@ class TestRandomLP(unittest.TestCase):
         infesibleCountOur = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp(random.randrange(1,15), random.randrange(1,15))
+            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
             self.c = c
             self.A = A
             self.b = b
@@ -143,7 +143,7 @@ class TestRandomLP(unittest.TestCase):
         infesibleCountOur = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp_neg_b(random.randrange(1,15), random.randrange(1,15))
+            c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
             self.A = A
             self.b = b
@@ -201,7 +201,7 @@ class TestRandomLP(unittest.TestCase):
         infesibleCountOur = 0
         for i in range(1000):
             ###############
-            c, A, b = random_lp_neg_b(random.randrange(1,15), random.randrange(1,15))
+            c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
             self.c = c
             self.A = A
             self.b = b

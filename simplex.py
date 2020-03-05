@@ -238,17 +238,17 @@ def compute_when_a_b_is_zero(D, eps, k):
     for i in range(len(BAarr)):
         #respect epsilon again here
         if (treat_as_zero(BAarr[i, 0], eps)):
-            BAarr[i, 0] = Fraction(0,1)
+            BAarr[i, 0] = 0
         if (treat_as_zero(BAarr[i, 1], eps)):
-            BAarr[i, 1] = Fraction(0,1)
+            BAarr[i, 1] = 0
         #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case
-            BAarr[i, 1] = Fraction(0,1) #set a to be 0
-            BAarr[i, 0] = Fraction(1,1) #set b to be 1. Ends up being -0/1 which is 0
-        elif BAarr[i, 0] == Fraction(0,1):
+        if (BAarr[i, 0] == 0 and (BAarr[i, 1] == 0)): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case. Report unbounded
+            BAarr[i, 1] = 0 #set a to be 0
+            BAarr[i, 0] = 1 #set b to be 1. Ends up being 0/1 which is 0
+        elif BAarr[i, 0] == 0:
             signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
-            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max).limit_denominator()
-            BAarr[i, 0] = Fraction(1,1)
+            BAarr[i, 1] = signOf_a * sys.float_info.max
+            BAarr[i, 0] = 1
     return BAarr
 
 def bland(D,eps):
@@ -279,8 +279,10 @@ def bland(D,eps):
 
     BAarr = compute_when_a_b_is_zero(D, eps, k) 
 
-    # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei
+    # apparently we should use highest ratio of -a/b instead of lowest of b/a. Section 2.4 in Vanderbei 
     highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
+    if highestRatio <= eps:
+        return k, None
     indexInB = None
     for i in range(len(BAarr)):
         if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
@@ -317,9 +319,7 @@ def largest_coefficient(D,eps):
     indexInN = np.where(obj == largestCoef)[0][0]
     k = indexInN
 
-    unbounded = checkUnbounded(D, k, eps)
-
-    if unbounded:
+    if checkUnbounded(D, k, eps):
         return k, None
 
     enteringVarColumn = D.C[1:, k+1]
@@ -386,7 +386,7 @@ def aux_pivotrule(D, eps):
     
     # x0 seems to be located rightmost, but not specified for lp_solve so make sure
     x0_index = get_x0_index(D) 
-    N_pos, = np.where(D.N == x0_index)[0]
+    N_pos = np.where(D.N == x0_index)[0][0]
     k = N_pos
 
     b_col = D.C[:,0] # value of objective function should be 0, so no need to remove
@@ -474,6 +474,8 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             #print("Index of entering is", k_aux, "and index of leaving is", l_aux)
             if k_aux is None: #if the entering var is none, then the aux dict is optimal
                 break
+            elif l_aux is None:
+                return LPResult.UNBOUNDED, None
             D_aux.pivot(k_aux, l_aux)
             # print("The aux dict is")
             # print(D_aux)
@@ -486,14 +488,17 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         if is_x0_basic(D_aux): #if x0 is in the basis, pivot it out
             #print("x0 is basic")
             x0_index = get_x0_index(D_aux) 
-            B_pos, = np.where(D_aux.B == x0_index)[0]
+            B_pos = np.where(D_aux.B == x0_index)[0][0]
             l = B_pos
-            D_aux.pivot(len(D_aux.C[0])-2, l)
+            k_ph = np.where(D_aux.C[l+1,1:] is not 0)
+            print(k_ph)
+            print(D_aux.C)
+            D_aux.pivot(len(D_aux.C[0])-2, l) #-2 is because we need to remove the consideration of objective value and column for aux var
             D_aux.C = np.delete(D_aux.C, l+1, axis=1)
             D_aux.N = np.delete(D_aux.N, l)
         else: #if x0 is not in the basis, remove it
             x0_index = get_x0_index(D_aux) 
-            N_pos, = np.where(D_aux.N == x0_index)[0]
+            N_pos = np.where(D_aux.N == x0_index)[0][0]
             l = N_pos
             D_aux.C = np.delete(D_aux.C, l+1, axis=1) #delete the column that is x0
             D_aux.N = np.delete(D_aux.N, l)
@@ -557,45 +562,45 @@ def run_examples():
     # print(D)
     # print()
 
-    # # Solve Example 1 using lp_solve
-    # c,A,b = example1()
-    # print('lp_solve Example 1:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Example 1 using lp_solve
+    c,A,b = example1()
+    print('lp_solve Example 1:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
-    # # Solve Example 2 using lp_solve
-    # c,A,b = example2()
-    # print('lp_solve Example 2:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Example 2 using lp_solve
+    c,A,b = example2()
+    print('lp_solve Example 2:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
-    # # Solve Exercise 2.5 using lp_solve
-    # c,A,b = exercise2_5()
-    # print('lp_solve Exercise 2.5:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exercise 2.5 using lp_solve
+    c,A,b = exercise2_5()
+    print('lp_solve Exercise 2.5:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
-    # # Solve Exercise 2.6 using lp_solve
-    # c,A,b = exercise2_6()
-    # print('lp_solve Exercise 2.6:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exercise 2.6 using lp_solve
+    c,A,b = exercise2_6()
+    print('lp_solve Exercise 2.6:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
-    # # Solve Exercise 2.7 using lp_solve
-    # c,A,b = exercise2_7()
-    # print('lp_solve Exercise 2.7:')
-    # res,D=lp_solve(c,A,b)
-    # print(res)
-    # print(D)
-    # print()
+    # Solve Exercise 2.7 using lp_solve
+    c,A,b = exercise2_7()
+    print('lp_solve Exercise 2.7:')
+    res,D=lp_solve(c,A,b)
+    print(res)
+    print(D)
+    print()
 
     # # #Integer pivoting
     # # c,A,b=example1()
