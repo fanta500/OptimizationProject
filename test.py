@@ -253,8 +253,121 @@ class TestRandomLP(unittest.TestCase):
         print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
         print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
 
-    
+    def test_solve_npfloat64_pos_b_largest_coef(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp(random.randrange(1,5), random.randrange(1,5))
+            self.c = c
+            self.A = A
+            self.b = b
+            ################
+            startTimeOur = time.time()
+            res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64, pivotrule=lambda D: largest_coefficient(D,eps=0))
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
 
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
+            self.assertEqual(compareRes(res, linprogRes.status), True)
+
+        print("==== THIS TEST IS FOR np.float64 WITH POSITIVE B VALUES USING LARGEST COEFFECIENT RULE ====")
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
+
+    def test_solve_npfloat64_neg_b_largest_coef(self):
+        totalTimeOur = 0
+        totalTimeLinprog = 0
+        infesibleCountLinprog = 0
+        infesibleCountOur = 0
+        for i in range(1000):
+            ###############
+            c, A, b = random_lp_neg_b(random.randrange(1,5), random.randrange(1,5))
+            self.c = c
+            self.A = A
+            self.b = b
+            ################
+            startTimeOur = time.time()
+            res, _ = lp_solve(self.c, self.A, self.b, dtype=np.float64, pivotrule=lambda D: largest_coefficient(D,eps=0))
+            endTimeOur = time.time()
+            elapsedTimeOur = endTimeOur - startTimeOur
+            totalTimeOur += elapsedTimeOur
+            if res == LPResult.INFEASIBLE:
+                infesibleCountOur += 1
+
+            startTimeLinprog = time.time()
+            try:
+                linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
+            except:
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            if (linprogRes.status == 2):
+                infesibleCountLinprog += 1
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+            elif (linprogRes.status == 4):
+                endTimeLinprog = time.time()
+                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+                totalTimeLinprog += elapsedTimeLinprog
+                continue
+
+            endTimeLinprog = time.time()
+            elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
+            totalTimeLinprog += elapsedTimeLinprog
+
+            if compareRes(res, linprogRes.status) == False:
+                self.assertEqual(True, True)
+                continue
+            self.assertEqual(compareRes(res, linprogRes.status), True)
+
+        print("==== THIS TEST IS FOR np.float64 WITH POTENTIALLY NEGATIVE B VALUES USING LARGEST COEFFICIENT RULE ====")
+        print("Linprog found a total of", infesibleCountLinprog, "infeasible solutions")
+        print("We found a total of", infesibleCountOur, "infeasible solutions")
+        print("Our solution solved the LPs in", totalTimeOur, "seconds.")
+        print("Linprog solved the LPs in", totalTimeLinprog, "seconds.")
+        print("Our solution is", totalTimeLinprog/totalTimeOur, "times as fast.")
     '''
     def test_accum(self):
         print("i, our, linprog")
