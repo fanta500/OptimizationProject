@@ -296,43 +296,55 @@ def largest_coefficient(D,eps):
     # Otherwise D.N[k] is entering variable
     # l is None if D is Unbounded
     # Otherwise D.B[l] is a leaving variable
-    
-    k = l = None
 
-    obj = D.C[0, 1:] #this selects the first row and all columns except the first one
-    largestCoef = np.sort(obj)[len(obj)-1]
-    if largestCoef <= eps: #if the largest coef is smaller or equal to eps, return optimal
-        return None, None
-    indexInN = np.where(obj == largestCoef)[0][0]
-    k = indexInN
+    obj = D.C[0, 1:]                                # Top row from [1, ..., width]
+    largestCoefficient = np.sort(obj)[len(obj)-1]   # Sort and pick the greatest number
+    if largestCoefficient <= eps:                   # If the value is smaller or equal to eps, return optimal
+        return None, 1
+    k = np.where(obj == largestCoefficient)[0][0]   # index position of the greatest number
 
-    enteringVarColumn = D.C[1:, k+1]
-    bValueColumn = D.C[1:, 0]
-    BAarr = np.column_stack((bValueColumn, enteringVarColumn)) #glue the b values with the a values of the entering var
-    for i in range(len(BAarr)):
-        #respect epsilon again here
-        if (treat_as_zero(BAarr[i, 0], eps)):
-            BAarr[i, 0] = Fraction(0,1)
-        if (treat_as_zero(BAarr[i, 1], eps)):
-            BAarr[i, 1] = Fraction(0,1)
-        #makes sure that the correct corner cases are treated properly
-        if (BAarr[i, 0] == Fraction(0,1) and (BAarr[i, 1] == Fraction(0,1))): #both a and b are 0, the resulting fraction of -a/b must be 0 for this special case
-            BAarr[i, 1] = Fraction(0,1) #set a to be 0
-            BAarr[i, 0] = Fraction(1,1) #set b to be 1. Ends up being -0/1 which is 0
-        elif BAarr[i, 0] == Fraction(0,1):
-            signOf_a = np.sign(BAarr[i, 1]) #above case handles a = 0, so the sign can never return 0
-            BAarr[i, 1] = signOf_a * Fraction(sys.float_info.max).limit_denominator()
-            BAarr[i, 0] = Fraction(1,1)
+    coefficientColumn = -D.C[1:, k+1]       # the a_{i,k} column
+    constantColumn = D.C[1:, 0]             # the b column
+    #with np.printoptions(linewidth=np.inf):
+        #print(D)
+        #print("enteringVarColumn: ", coefficientColumn)
+        #print("bValueColumn:      ", constantColumn)
 
-    # apparently we should use highest ratio of a/b instead of lowest of b/a. Section 2.4 in Vanderbei
-    highestRatio = np.sort(np.divide(-BAarr[:, 1], BAarr[:, 0]))[len(BAarr)-1]
-    indexInB = None
-    for i in range(len(BAarr)):
-        if highestRatio == np.divide(-BAarr[i, 1], BAarr[i, 0]):
-            indexInB = i  
-    l = indexInB
+    # pick l from {i ∈ B: a_{ik}/b_i is maximal}.
+    largestIncrease = Fraction(-1, 1)
+    indexPosition = -1
+    #print("Initial choice: ", largestIncrease, " initial index position: ", indexPosition)
+    for i in range(len(coefficientColumn)): # len(coefficientColumn) = len(constantColumn)
+        a = coefficientColumn[i]
+        b = constantColumn[i]
+        if -eps <= a <= eps:                # if 0/b set to 0
+            fraction = Fraction(0, 1)
+            #with np.printoptions(linewidth=np.inf):
+                #print(fraction)
+            if largestIncrease < fraction:
+                largestIncrease = fraction
+                indexPosition = i
+        elif -eps <= b <= eps:              # if a/0 set to infty
+            aSign = np.sign(a)
+            if aSign < 0:
+                fraction = Fraction(sys.float_info.min).limit_denominator()
+            else:
+                fraction = Fraction(sys.float_info.max).limit_denominator()
+            #with np.printoptions(linewidth=np.inf):
+                #print(fraction)
+            if largestIncrease < fraction:
+                largestIncrease = fraction
+                indexPosition = i
+        else:
+            fraction = Fraction(a, b)
+            #with np.printoptions(linewidth=np.inf):
+                #print(fraction)
+            if largestIncrease < fraction:
+                largestIncrease = fraction
+                indexPosition = i
+        #print("bedst yet: ", largestIncrease, " index position: ", indexPosition)
 
-    return k,l
+    return k, indexPosition
 
 def largest_increase(D,eps):
     # Assumes a feasible dictionary D and find entering and leaving
@@ -502,8 +514,6 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
             return LPResult.UNBOUNDED, None 
 
         D.pivot(k,l)
-
-    return None,None
   
 def run_examples():
     # # Example 1
