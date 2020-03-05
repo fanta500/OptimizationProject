@@ -430,6 +430,33 @@ def express_objective(D_origin, D_aux):
     #print("The new feasible dict is\n", D_aux)
     return D_aux
 
+def pivot_to_result(D, pivotrule=lambda D: bland(D,eps=0)):
+    current_pivotrule = pivotrule
+    allowed_degenerate = 1
+    num_degenerate_pivots = 0
+    old_objective_value = D.C[0,0]
+    while True:
+        k, l = current_pivotrule(D)
+
+        if k is None:
+            return LPResult.OPTIMAL, D
+
+        if l is None:
+            return LPResult.UNBOUNDED, None
+        
+        D.pivot(k, l)
+
+        objective_value = D.C[0,0]
+        if objective_value <= old_objective_value:
+            num_degenerate_pivots +=1
+            print("Degenerate pivot performed, count is now", num_degenerate_pivots)
+        else:
+            num_degenerate_pivots = 0
+        
+        if num_degenerate_pivots > allowed_degenerate:
+            print("Switched to bland's")
+            current_pivotrule = lambda D: bland(D,eps=0)
+
 
 def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbose=False):
     # Simplex algorithm
@@ -468,18 +495,22 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
         D_aux.pivot(k_aux, l_aux)
         # print("The aux dict is")
         # print(D_aux)
-        while True: 
-            #make pivots in the now feasible dict
-            k_aux, l_aux = pivotrule(D_aux)
-            #print("Index of entering is", k_aux, "and index of leaving is", l_aux)
-            if k_aux is None: #if the entering var is none, then the aux dict is optimal
-                break
-            elif l_aux is None:
-                return LPResult.UNBOUNDED, None
-            D_aux.pivot(k_aux, l_aux)
-            # print("The aux dict is")
-            # print(D_aux)
+        # while True: 
+        #     #make pivots in the now feasible dict
+        #     k_aux, l_aux = pivotrule(D_aux)
+        #     #print("Index of entering is", k_aux, "and index of leaving is", l_aux)
+        #     if k_aux is None: #if the entering var is none, then the aux dict is optimal
+        #         break
+        #     elif l_aux is None:
+        #         return LPResult.UNBOUNDED, None
+        #     D_aux.pivot(k_aux, l_aux)
+        #     # print("The aux dict is")
+        #     # print(D_aux)
+        aux_result, D_aux = pivot_to_result(D_aux, pivotrule)
+        if aux_result == LPResult.UNBOUNDED:
+            return LPResult.UNBOUNDED, None
         objValueAux = D_aux.C[0,0]
+
         # print("The value of the objective func is", objValueAux)
         if objValueAux < -eps: #if the optimal aux dict has optimal solution less than 0, the original LP is infeasible
             return LPResult.INFEASIBLE, None  
@@ -510,18 +541,17 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
 
         D = express_objective(D, D_aux)
     
-    while True:
-        k, l = pivotrule(D)
-        # print(k)
-        if k is None:
-            return LPResult.OPTIMAL, D
+    # while True:
+    #     k, l = pivotrule(D)
+    #     # print(k)
+    #     if k is None:
+    #         return LPResult.OPTIMAL, D
 
-        if l is None:
-            return LPResult.UNBOUNDED, None 
+    #     if l is None:
+    #         return LPResult.UNBOUNDED, None 
 
-        D.pivot(k,l)
-
-    return None,None
+    #     D.pivot(k,l)
+    return pivot_to_result(D, pivotrule)
   
 def run_examples():
     # # Example 1
@@ -653,6 +683,73 @@ def run_examples():
     print(res)
     print(D)
     print()
+
+
+def run_examples_pv_largest_coef():
+
+    print("Examples with largest coefficient rule")
+
+    # Solve Example 1 using lp_solve
+    c,A,b = example1()
+    print('lp_solve Example 1:')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # Solve Example 2 using lp_solve
+    c,A,b = example2()
+    print('lp_solve Example 2:')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # Solve Exercise 2.5 using lp_solve
+    c,A,b = exercise2_5()
+    print('lp_solve Exercise 2.5:')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # Solve Exercise 2.6 using lp_solve
+    c,A,b = exercise2_6()
+    print('lp_solve Exercise 2.6:')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # Solve Exercise 2.7 using lp_solve
+    c,A,b = exercise2_7()
+    print('lp_solve Exercise 2.7:')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # # Solve Exmaple slide 42 lec 2 using lp_solve
+    c = np.array([1,-1,1])
+    A = np.array([np.array([2,-3,1]),np.array([2,-1,2]),np.array([-1,1,-2])])
+    b = np.array([-5,4,-1])
+    print('lp_solve Ex 42 2')
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
+    # Solve randomly generated problem
+    c = np.array([-5,-9,16,8])
+    A = np.array([np.array([0,3,0,20])])
+    b = np.array([-13])
+    print('lp_solve random generated lp')
+    print(Dictionary(c,A,b))
+    res,D=lp_solve(c,A,b, pivotrule=lambda D: largest_coefficient(D,eps=0))
+    print(res)
+    print(D)
+    print()
+
 
 if __name__ == "__main__":
     run_examples()
