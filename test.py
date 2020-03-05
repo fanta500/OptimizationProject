@@ -372,42 +372,6 @@ class TestRandomLP(unittest.TestCase):
 
     '''
 
-    '''
-    def test_accum(self):
-        print("i, our, linprog")
-        for i in range(0,50):
-            totalTimeOur = 0
-            totalTimeLinprog = 0
-            for j in range(10):
-                ###############
-                c, A, b = random_lp_neg_b(i, i)
-                self.c = c
-                self.A = A
-                self.b = b
-                ################
-                startTimeOur = time.time()
-                res, _ = lp_solve(self.c, self.A, self.b)
-                endTimeOur = time.time()
-                elapsedTimeOur = endTimeOur - startTimeOur
-                totalTimeOur += elapsedTimeOur
-
-                
-                startTimeLinprog = time.time()
-                try:
-                    linprogRes = opt.linprog(-self.c, A_ub=self.A, b_ub=self.b)
-                except:
-                    endTimeLinprog = time.time()
-                    elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
-                    totalTimeLinprog += elapsedTimeLinprog
-                    continue
-
-                endTimeLinprog = time.time()
-                elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
-                totalTimeLinprog += elapsedTimeLinprog
-            
-            print(i,",",totalTimeOur,",",totalTimeLinprog)
-        '''
-
     def test_accum_compare(self):
         num_problems = 50
         print("Solving", num_problems, "for each")
