@@ -221,11 +221,13 @@ class LPResult(Enum):
     INFEASIBLE = 2
     UNBOUNDED = 3
 
+
 def treat_as_zero(x, eps):
     if -eps <= x and x <= eps:
         return True
     else:
         return False
+
 
 def bland(D,eps):
     # Assumes a feasible dictionary D and finds entering and leaving
@@ -278,11 +280,13 @@ def bland(D,eps):
 
     return k,l
 
+
 def checkUnbounded(D, k):
     for i in range(len(D.B)):
         if D.C[i+1, k+1] < 0:
             return False
     return True
+
 
 def largest_coefficient(D,eps):
     # Assumes a feasible dictionary D and find entering and leaving
@@ -305,48 +309,31 @@ def largest_coefficient(D,eps):
 
     coefficientColumn = -D.C[1:, k+1]       # the a_{i,k} column
     constantColumn = D.C[1:, 0]             # the b column
-    #with np.printoptions(linewidth=np.inf):
-        #print(D)
-        #print("enteringVarColumn: ", coefficientColumn)
-        #print("bValueColumn:      ", constantColumn)
 
     # pick l from {i ∈ B: a_{ik}/b_i is maximal}.
     largestIncrease = Fraction(-1, 1)
-    indexPosition = -1
-    #print("Initial choice: ", largestIncrease, " initial index position: ", indexPosition)
+    indexPosition = None
     for i in range(len(coefficientColumn)): # len(coefficientColumn) = len(constantColumn)
         a = coefficientColumn[i]
         b = constantColumn[i]
         if -eps <= a <= eps:                # if 0/b set to 0
             fraction = Fraction(0, 1)
-            #with np.printoptions(linewidth=np.inf):
-                #print(fraction)
-            if largestIncrease < fraction:
-                largestIncrease = fraction
-                indexPosition = i
         elif -eps <= b <= eps:              # if a/0 set to infty
             aSign = np.sign(a)
-            if aSign < 0:
+            if aSign < 0:                   # if a is negative set to -infty
                 fraction = Fraction(sys.float_info.min).limit_denominator()
-            else:
+            else:                           # else set to infty
                 fraction = Fraction(sys.float_info.max).limit_denominator()
-            #with np.printoptions(linewidth=np.inf):
-                #print(fraction)
-            if largestIncrease < fraction:
-                largestIncrease = fraction
-                indexPosition = i
         else:
             fraction = Fraction(a, b)
-            #with np.printoptions(linewidth=np.inf):
-                #print(fraction)
-            if largestIncrease < fraction:
-                largestIncrease = fraction
-                indexPosition = i
-        #print("bedst yet: ", largestIncrease, " index position: ", indexPosition)
+        if largestIncrease < fraction:      # Update largest fraction and position
+            largestIncrease = fraction
+            indexPosition = i
 
     return k, indexPosition
 
-def largest_increase(D,eps):
+
+def largest_increase(D, eps):
     # Assumes a feasible dictionary D and find entering and leaving
     # variables according to the Largest Increase rule.
     #
@@ -358,10 +345,50 @@ def largest_increase(D,eps):
     # Otherwise D.N[k] is entering variable
     # l is None if D is Unbounded
     # Otherwise D.B[l] is a leaving variable
-    
-    k=l=None
-    # TODO
-    return k,l
+
+    # A / (I * b)
+    # bc / a
+    h, w = D.C.shape
+    largestFraction = Fraction(-10, 1)
+    k_n = None
+    l_b = None
+
+    flag = True
+    for i in range(1, w):           # Bail out fast
+        if D.C[0, i] > eps:
+            flag = False
+    if flag:
+        return None, 1
+
+    for i in range(1, w):
+        for j in range(1, h):
+            a = -D.C[i, j]
+            b = D.C[i, 0]
+            c = D.C[0, j]
+            if -eps <= b <= eps:    # if 0/a set to 0
+                fraction = Fraction(0, 1)
+            elif -eps <= a <= eps:  # if b/0 set to infty
+                aSign = np.sign(a)
+                if -eps <= c <= eps:
+                    fraction = Fraction(0, 1)
+                else:
+                    if aSign < 0:
+                        fraction = Fraction(sys.float_info.min * c).limit_denominator()
+                    else:
+                        fraction = Fraction(sys.float_info.max * c).limit_denominator()
+            else:
+                if -eps <= c <= eps:
+                    fraction = Fraction(0, 1)
+                else:
+                   fraction = Fraction(b * c, a)
+            if largestFraction < fraction:
+                largestFraction = fraction
+                k_n = i
+                l_b = j
+            print("fraction:", fraction, ", Largest fraction: ", largestFraction, ", n: ", k_n, ", b :", l_b)
+
+    return k_n, l_b
+
 
 def is_dictionary_infeasible(D, eps):
     # Dict. is feasible if all b's are nonnegative. Ie C[i,0] >= 0 (with eps).
@@ -370,11 +397,13 @@ def is_dictionary_infeasible(D, eps):
             return True
     return False
 
+
 def get_x0_index(D):
     # The index of x0, ie the value in D.N and D.B that corresponds to x0
     _, w = D.C.shape
     x0_index = w-1
     return x0_index
+
 
 def aux_pivotrule(D):
     # Choose pivot variables for first aux. dictionary pivot. 
@@ -391,6 +420,7 @@ def aux_pivotrule(D):
     l = index_of_minimal - 1
 
     return k, l
+
 
 def is_x0_basic(D):
     # Check if x0 is in basis
@@ -515,6 +545,7 @@ def lp_solve(c,A,b,dtype=Fraction,eps=0,pivotrule=lambda D: bland(D,eps=0),verbo
 
         D.pivot(k,l)
   
+
 def run_examples():
     # # Example 1
     # c,A,b = example1()
@@ -634,6 +665,7 @@ def run_examples():
     print(res)
     print(D)
     print()
+
 
 if __name__ == "__main__":
     run_examples()
