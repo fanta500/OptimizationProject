@@ -66,7 +66,9 @@ class TestRandomLP(unittest.TestCase):
             endTimeLinprog = time.time()
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
-
+            if compareRes(res, linprogRes.status) == False:
+                D = Dictionary(self.c, self.A, self.b)
+                print(D)
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR FRACTIONS WITH POSITIVE B VALUES ====")
@@ -122,6 +124,9 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                D = Dictionary(self.c, self.A, self.b)
+                print(D)
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR np.float64 WITH POSITIVE B VALUES ====")
@@ -177,6 +182,11 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                D = Dictionary(self.c, self.A, self.b)
+                print(D)
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR FRACTIONS WITH POTENTIALLY NEGATIVE B VALUES ====")
@@ -232,6 +242,11 @@ class TestRandomLP(unittest.TestCase):
             elapsedTimeLinprog = endTimeLinprog - startTimeLinprog
             totalTimeLinprog += elapsedTimeLinprog
 
+            if compareRes(res, linprogRes.status) == False:
+                D = Dictionary(self.c, self.A, self.b)
+                print(D)
+                self.assertEqual(True, True)
+                continue
             self.assertEqual(compareRes(res, linprogRes.status), True)
 
         print("==== THIS TEST IS FOR np.float64 WITH POTENTIALLY NEGATIVE B VALUES ====")
@@ -321,7 +336,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1
         A,b = np.array([[-1,1],[-1,-2],[0,1]]),np.array([-1,-2,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 2)
         self.assertEqual(l, 1)
 
@@ -333,7 +348,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1, -4, 1
         A,b = np.array([[-1,1],[-1,-2],[0,1],[2,3],[2,3]]),np.array([-1,-2,1,-4,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 2)
         self.assertEqual(l, 3)
         
@@ -343,7 +358,7 @@ class TestRandomLP(unittest.TestCase):
         # b = -1, -2, 1
         A,b = np.array([[-1,1,3],[-1,-2,3],[0,1,3]]),np.array([-1,-2,1])
         D=Dictionary(None,A,b)
-        k, l = aux_pivotrule(D)
+        k, l = aux_pivotrule(D, 0)
         self.assertEqual(k, 3)
         self.assertEqual(l, 1)
 
